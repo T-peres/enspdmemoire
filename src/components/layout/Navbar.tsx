@@ -1,7 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
-import { BookOpen, LogOut, User, GraduationCap } from 'lucide-react';
+import { BookOpen, LogOut, User, GraduationCap, FileText } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -61,6 +61,10 @@ export function Navbar() {
                   <DropdownMenuItem onClick={() => navigate('/my-thesis')}>
                     <BookOpen className="mr-2 h-4 w-4" />
                     Mon Mémoire
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate('/my-proposed-topics')}>
+                    <FileText className="mr-2 h-4 w-4" />
+                    Mes Sujets Proposés
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={handleSignOut} className="text-destructive">
