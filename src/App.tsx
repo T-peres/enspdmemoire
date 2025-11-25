@@ -9,6 +9,7 @@ import Dashboard from "./pages/Dashboard";
 import Auth from "./pages/Auth";
 import Topics from "./pages/Topics";
 import MyThesis from "./pages/MyThesis";
+import MyProposedTopics from "./pages/MyProposedTopics";
 import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 
@@ -36,6 +37,11 @@ const App = () => (
             <Route path="/my-thesis" element={
               <ProtectedRoute>
                 <MyThesis />
+              </ProtectedRoute>
+            } />
+            <Route path="/my-proposed-topics" element={
+              <ProtectedRoute>
+                <MyProposedTopics />
               </ProtectedRoute>
             } />
             <Route path="/profile" element={
