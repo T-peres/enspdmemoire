@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navbar } from '@/components/layout/Navbar';
+import { ProposeTopicDialog } from '@/components/topics/ProposeTopicDialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -121,11 +122,14 @@ export default function Topics() {
       <Navbar />
       
       <div className="container mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold mb-2">Sujets de Mémoire</h1>
-          <p className="text-muted-foreground">
-            Explorez et sélectionnez votre sujet de mémoire parmi les propositions disponibles
-          </p>
+        <div className="mb-8 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+          <div>
+            <h1 className="text-4xl font-bold mb-2">Sujets de Mémoire</h1>
+            <p className="text-muted-foreground">
+              Explorez et sélectionnez votre sujet de mémoire parmi les propositions disponibles
+            </p>
+          </div>
+          <ProposeTopicDialog onTopicProposed={fetchTopics} />
         </div>
 
         {/* Filters */}
