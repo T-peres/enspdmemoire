@@ -1,7 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
-import { BookOpen, LogOut, User, GraduationCap, FileText } from 'lucide-react';
+import { BookOpen, LogOut, User, GraduationCap, FileText, LayoutDashboard } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 
 export function Navbar() {
-  const { user, profile, signOut } = useAuth();
+  const { user, profile, signOut, hasRole } = useAuth();
   const navigate = useNavigate();
 
   const handleSignOut = async () => {
@@ -66,6 +66,12 @@ export function Navbar() {
                     <FileText className="mr-2 h-4 w-4" />
                     Mes Sujets Proposés
                   </DropdownMenuItem>
+                  {hasRole('department_head') && (
+                    <DropdownMenuItem onClick={() => navigate('/department-dashboard')}>
+                      <LayoutDashboard className="mr-2 h-4 w-4" />
+                      Tableau de Bord Département
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={handleSignOut} className="text-destructive">
                     <LogOut className="mr-2 h-4 w-4" />
