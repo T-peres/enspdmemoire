@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
-import { GraduationCap } from 'lucide-react';
+import telechargement from '../../public/téléchargement.jpg';
 import { z } from 'zod';
 
 const loginSchema = z.object({
@@ -119,7 +119,7 @@ export default function Auth() {
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
             <div className="h-12 w-12 rounded-full bg-gradient-primary flex items-center justify-center">
-              <GraduationCap className="h-6 w-6 text-white" />
+              <img src={telechargement} alt="logo" className="h-12 w-12 rounded-full cursor-pointer " />
             </div>
           </div>
           <CardTitle className="text-2xl">PolyMémoire ENSPD</CardTitle>

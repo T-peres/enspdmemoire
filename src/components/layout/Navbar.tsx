@@ -24,7 +24,7 @@ export function Navbar() {
       <div className="container mx-auto px-4">
         <div className="flex h-16 items-center justify-between">
           <Link to="/" className="flex items-center gap-2 font-bold text-xl">
-            <GraduationCap className="h-6 w-6 text-primary" />
+            <img src="/téléchargement.jpg" alt="Logo" className="h-8 w-8 object-contain" />
             <span className="bg-gradient-primary bg-clip-text text-transparent">
               PolyMémoire
             </span>
