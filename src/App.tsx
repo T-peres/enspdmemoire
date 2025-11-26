@@ -12,6 +12,7 @@ import MyThesis from "./pages/MyThesis";
 import MyProposedTopics from "./pages/MyProposedTopics";
 import Profile from "./pages/Profile";
 import DepartmentDashboard from "./pages/DepartmentDashboard";
+import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -53,6 +54,11 @@ const App = () => (
             <Route path="/department-dashboard" element={
               <ProtectedRoute requiredRole="department_head">
                 <DepartmentDashboard />
+              </ProtectedRoute>
+            } />
+            <Route path="/admin" element={
+              <ProtectedRoute requiredRole="admin">
+                <Admin />
               </ProtectedRoute>
             } />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

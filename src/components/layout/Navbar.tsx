@@ -1,7 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
-import { BookOpen, LogOut, User, GraduationCap, FileText, LayoutDashboard } from 'lucide-react';
+import { BookOpen, LogOut, User, GraduationCap, FileText, LayoutDashboard, Shield } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -70,6 +70,12 @@ export function Navbar() {
                     <DropdownMenuItem onClick={() => navigate('/department-dashboard')}>
                       <LayoutDashboard className="mr-2 h-4 w-4" />
                       Tableau de Bord Département
+                    </DropdownMenuItem>
+                  )}
+                  {(hasRole('admin') || hasRole('super_admin')) && (
+                    <DropdownMenuItem onClick={() => navigate('/admin')}>
+                      <Shield className="mr-2 h-4 w-4" />
+                      Administration
                     </DropdownMenuItem>
                   )}
                   <DropdownMenuSeparator />
