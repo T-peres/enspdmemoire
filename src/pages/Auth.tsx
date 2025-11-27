@@ -50,15 +50,23 @@ export default function Auth() {
     setLoading(true);
 
     try {
-      loginSchema.parse(loginForm);
+      // Validate form first
+      const validation = loginSchema.safeParse(loginForm);
+      if (!validation.success) {
+        toast.error(validation.error.errors[0].message);
+        return;
+      }
       
       const { error } = await signIn(loginForm.email, loginForm.password);
 
       if (error) {
-        if (error.message.includes('Invalid login credentials')) {
+        console.error('Login error:', error);
+        if (error.message.includes('Invalid login credentials') || error.message.includes('invalid_grant')) {
           toast.error('Email ou mot de passe incorrect');
+        } else if (error.message.includes('Email not confirmed')) {
+          toast.error('Veuillez confirmer votre email avant de vous connecter');
         } else {
-          toast.error(error.message);
+          toast.error('Erreur de connexion. Veuillez réessayer.');
         }
         return;
       }
@@ -66,9 +74,8 @@ export default function Auth() {
       toast.success('Connexion réussie !');
       navigate('/', { replace: true });
     } catch (error) {
-      if (error instanceof z.ZodError) {
-        toast.error(error.errors[0].message);
-      }
+      console.error('Unexpected error:', error);
+      toast.error('Une erreur inattendue s\'est produite');
     } finally {
       setLoading(false);
     }
@@ -79,7 +86,12 @@ export default function Auth() {
     setLoading(true);
 
     try {
-      signupSchema.parse(signupForm);
+      // Validate form first
+      const validation = signupSchema.safeParse(signupForm);
+      if (!validation.success) {
+        toast.error(validation.error.errors[0].message);
+        return;
+      }
 
       const { error } = await signUp(
         signupForm.email,
@@ -89,15 +101,18 @@ export default function Auth() {
       );
 
       if (error) {
-        if (error.message.includes('already registered')) {
+        console.error('Signup error:', error);
+        if (error.message.includes('already registered') || error.message.includes('already been registered')) {
           toast.error('Cet email est déjà utilisé');
+        } else if (error.message.includes('Password should be')) {
+          toast.error('Le mot de passe doit contenir au moins 6 caractères');
         } else {
-          toast.error(error.message);
+          toast.error('Erreur lors de la création du compte. Veuillez réessayer.');
         }
         return;
       }
 
-      toast.success('Compte créé avec succès ! Vous pouvez maintenant vous connecter.');
+      toast.success('Compte créé avec succès ! Vérifiez votre email pour confirmer votre compte.');
       // Switch to login tab
       const loginTab = document.querySelector('[value="login"]') as HTMLElement;
       loginTab?.click();
@@ -105,9 +120,8 @@ export default function Auth() {
       // Pre-fill login form
       setLoginForm({ email: signupForm.email, password: signupForm.password });
     } catch (error) {
-      if (error instanceof z.ZodError) {
-        toast.error(error.errors[0].message);
-      }
+      console.error('Unexpected error:', error);
+      toast.error('Une erreur inattendue s\'est produite');
     } finally {
       setLoading(false);
     }

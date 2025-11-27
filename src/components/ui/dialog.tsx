@@ -8,7 +8,27 @@ const Dialog = DialogPrimitive.Root;
 
 const DialogTrigger = DialogPrimitive.Trigger;
 
-const DialogPortal = DialogPrimitive.Portal;
+// Portal sécurisé qui évite les erreurs removeChild
+const DialogPortal = React.forwardRef<
+  React.ElementRef<typeof DialogPrimitive.Portal>,
+  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Portal>
+>(({ children, ...props }, ref) => {
+  const [mounted, setMounted] = React.useState(false);
+  
+  React.useEffect(() => {
+    setMounted(true);
+    return () => setMounted(false);
+  }, []);
+  
+  if (!mounted) return null;
+  
+  return (
+    <DialogPrimitive.Portal ref={ref} {...props}>
+      {children}
+    </DialogPrimitive.Portal>
+  );
+});
+DialogPortal.displayName = "DialogPortal";
 
 const DialogClose = DialogPrimitive.Close;
 

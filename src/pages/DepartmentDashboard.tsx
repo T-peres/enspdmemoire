@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Navbar } from '@/components/layout/Navbar';
@@ -6,8 +6,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { ThesisTopic, TopicStatus } from '@/types/database';
+import { ThesisTopic, Department } from '@/types/database';
 import {
   Table,
   TableBody,
@@ -16,9 +17,12 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { CheckCircle, XCircle, Clock, BarChart3, FileText, Users } from 'lucide-react';
+import { CheckCircle, XCircle, Clock, BarChart3, FileText, Users, Building2, UserCheck } from 'lucide-react';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend } from 'recharts';
+import { PieChart, Pie, Cell, Legend } from 'recharts';
+import { SupervisorAssignmentForm } from '@/components/department/SupervisorAssignmentForm';
+import { SupervisorsList } from '@/components/department/SupervisorsList';
+import { FicheSuiviValidation } from '@/components/department/FicheSuiviValidation';
 
 const statusColors = {
   pending: 'hsl(var(--warning))',
@@ -31,7 +35,9 @@ export default function DepartmentDashboard() {
   const { profile, hasRole } = useAuth();
   const { toast } = useToast();
   const [topics, setTopics] = useState<ThesisTopic[]>([]);
+  const [department, setDepartment] = useState<Department | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isMounted, setIsMounted] = useState(true);
   const [stats, setStats] = useState({
     pending: 0,
     approved: 0,
@@ -40,10 +46,38 @@ export default function DepartmentDashboard() {
   });
 
   useEffect(() => {
+    setIsMounted(true);
     if (profile?.department_id) {
-      fetchTopics();
+      fetchDepartmentData();
     }
+    
+    return () => {
+      setIsMounted(false);
+    };
   }, [profile]);
+
+  const fetchDepartmentData = async () => {
+    try {
+      // Charger les informations du département
+      const { data: deptData, error: deptError } = await supabase
+        .from('departments')
+        .select('*')
+        .eq('id', profile?.department_id)
+        .single();
+
+      if (deptError) throw deptError;
+      setDepartment(deptData);
+
+      // Charger les sujets
+      await fetchTopics();
+    } catch (error: any) {
+      toast({
+        title: 'Erreur',
+        description: error.message,
+        variant: 'destructive',
+      });
+    }
+  };
 
   const fetchTopics = async () => {
     try {
@@ -122,12 +156,12 @@ export default function DepartmentDashboard() {
     return <Badge variant={variants[status]}>{labels[status]}</Badge>;
   };
 
-  const chartData = [
+  const chartData = useMemo(() => [
     { name: 'En attente', value: stats.pending, color: statusColors.pending },
     { name: 'Approuvés', value: stats.approved, color: statusColors.approved },
     { name: 'Rejetés', value: stats.rejected, color: statusColors.rejected },
     { name: 'Verrouillés', value: stats.locked, color: statusColors.locked },
-  ];
+  ], [stats]);
 
   const chartConfig = {
     pending: { label: 'En attente', color: statusColors.pending },
@@ -135,6 +169,25 @@ export default function DepartmentDashboard() {
     rejected: { label: 'Rejetés', color: statusColors.rejected },
     locked: { label: 'Verrouillés', color: statusColors.locked },
   };
+
+  // Couleurs par département
+  const getDepartmentColor = (code: string) => {
+    const colors: Record<string, { bg: string; text: string; border: string; accent: string }> = {
+      'GIT': { bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-300', accent: 'bg-blue-600' },
+      'GESI': { bg: 'bg-purple-50', text: 'text-purple-700', border: 'border-purple-300', accent: 'bg-purple-600' },
+      'GQHSE': { bg: 'bg-green-50', text: 'text-green-700', border: 'border-green-300', accent: 'bg-green-600' },
+      'GAM': { bg: 'bg-orange-50', text: 'text-orange-700', border: 'border-orange-300', accent: 'bg-orange-600' },
+      'GMP': { bg: 'bg-cyan-50', text: 'text-cyan-700', border: 'border-cyan-300', accent: 'bg-cyan-600' },
+      'GP': { bg: 'bg-indigo-50', text: 'text-indigo-700', border: 'border-indigo-300', accent: 'bg-indigo-600' },
+      'GE': { bg: 'bg-yellow-50', text: 'text-yellow-700', border: 'border-yellow-300', accent: 'bg-yellow-600' },
+      'GM': { bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-300', accent: 'bg-red-600' },
+      'GPH': { bg: 'bg-pink-50', text: 'text-pink-700', border: 'border-pink-300', accent: 'bg-pink-600' },
+      'GC': { bg: 'bg-teal-50', text: 'text-teal-700', border: 'border-teal-300', accent: 'bg-teal-600' },
+    };
+    return colors[code] || { bg: 'bg-gray-50', text: 'text-gray-700', border: 'border-gray-300', accent: 'bg-gray-600' };
+  };
+
+  const deptColors = department ? getDepartmentColor(department.code) : { bg: 'bg-gray-50', text: 'text-gray-700', border: 'border-gray-300', accent: 'bg-gray-600' };
 
   if (!hasRole('department_head')) {
     return (
@@ -155,11 +208,33 @@ export default function DepartmentDashboard() {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
+      
+      {/* Bandeau personnalisé du département */}
+      {department && (
+        <div className={`${deptColors.bg} ${deptColors.border} border-b-4`}>
+          <div className="container mx-auto px-4 py-6">
+            <div className="flex items-center gap-4">
+              <div className={`${deptColors.accent} p-3 rounded-lg text-white shadow-lg`}>
+                <Building2 className="h-8 w-8" />
+              </div>
+              <div>
+                <h2 className={`text-2xl font-bold ${deptColors.text}`}>
+                  {department.name}
+                </h2>
+                <p className="text-sm text-gray-600">
+                  Code: <span className="font-semibold">{department.code}</span> • Chef de Département: {profile?.first_name} {profile?.last_name}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      
       <div className="container mx-auto px-4 py-8">
         <div className="mb-8">
-          <h1 className="text-4xl font-bold mb-2">Tableau de Bord Département</h1>
+          <h1 className="text-4xl font-bold mb-2">Tableau de Bord Chef de Département</h1>
           <p className="text-muted-foreground">
-            Gérez les sujets de mémoire de votre département
+            Gestion complète du département {department?.code}
           </p>
         </div>
 
@@ -173,9 +248,17 @@ export default function DepartmentDashboard() {
             <Skeleton className="h-96" />
           </div>
         ) : (
-          <>
-            {/* Statistics Cards */}
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8">
+          <Tabs defaultValue="topics" className="space-y-6">
+            <TabsList className="grid w-full grid-cols-4">
+              <TabsTrigger value="topics">Sujets de Thèse</TabsTrigger>
+              <TabsTrigger value="assignments">Attribution Encadreurs</TabsTrigger>
+              <TabsTrigger value="supervisors">Encadreurs</TabsTrigger>
+              <TabsTrigger value="validation">Validation Fiches</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="topics" className="space-y-6">
+              {/* Statistics Cards */}
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">En Attente</CardTitle>
@@ -233,9 +316,9 @@ export default function DepartmentDashboard() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <ChartContainer config={chartConfig} className="h-[300px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
+                {isMounted && (
+                  <ChartContainer config={chartConfig} className="h-[300px] w-full">
+                    <PieChart width={885} height={300}>
                       <Pie
                         data={chartData}
                         cx="50%"
@@ -247,14 +330,16 @@ export default function DepartmentDashboard() {
                         dataKey="value"
                       >
                         {chartData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color} />
+                          <Cell key={`cell-${entry.name}`} fill={entry.color} />
                         ))}
                       </Pie>
-                      <ChartTooltip content={<ChartTooltipContent />} />
+                      <ChartTooltip 
+                        content={<ChartTooltipContent />}
+                      />
                       <Legend />
                     </PieChart>
-                  </ResponsiveContainer>
-                </ChartContainer>
+                  </ChartContainer>
+                )}
               </CardContent>
             </Card>
 
@@ -335,7 +420,7 @@ export default function DepartmentDashboard() {
               </Card>
             )}
 
-            {/* All Topics Table */}
+            {/* All Topics Table - Moved inside topics tab */}
             <Card className="mt-8">
               <CardHeader>
                 <CardTitle>Tous les Sujets du Département</CardTitle>
@@ -385,7 +470,39 @@ export default function DepartmentDashboard() {
                 </Table>
               </CardContent>
             </Card>
-          </>
+            </TabsContent>
+
+            <TabsContent value="assignments" className="space-y-6">
+              <div className="grid gap-6 md:grid-cols-2">
+                <SupervisorAssignmentForm />
+                
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <UserCheck className="h-5 w-5" />
+                      Attributions Récentes
+                    </CardTitle>
+                    <CardDescription>
+                      Dernières attributions d'encadreurs du département
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-gray-500 text-center py-8">
+                      Les attributions récentes s'afficheront ici
+                    </p>
+                  </CardContent>
+                </Card>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="supervisors" className="space-y-6">
+              <SupervisorsList />
+            </TabsContent>
+
+            <TabsContent value="validation" className="space-y-6">
+              <FicheSuiviValidation />
+            </TabsContent>
+          </Tabs>
         )}
       </div>
     </div>

@@ -22,7 +22,7 @@ import {
 } from '@/components/ui/select';
 import { toast } from '@/hooks/use-toast';
 import { Department } from '@/types/database';
-import { Plus, Loader2 } from 'lucide-react';
+import { Plus, Loader2, Upload, FileText, X } from 'lucide-react';
 
 interface ProposeTopicDialogProps {
   onTopicProposed?: () => void;
@@ -40,6 +40,9 @@ export function ProposeTopicDialog({ onTopicProposed }: ProposeTopicDialogProps)
     department_id: '',
     max_students: 1,
   });
+  
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [uploadProgress, setUploadProgress] = useState(0);
 
   useEffect(() => {
     if (open) {
@@ -65,6 +68,69 @@ export function ProposeTopicDialog({ onTopicProposed }: ProposeTopicDialogProps)
       });
     } else {
       setDepartments(data || []);
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Vérifier la taille du fichier (max 10MB)
+      if (file.size > 10 * 1024 * 1024) {
+        toast({
+          title: 'Erreur',
+          description: 'Le fichier ne doit pas dépasser 10 MB',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      // Vérifier le type de fichier
+      const allowedTypes = [
+        'application/pdf',
+        'application/msword',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'text/plain',
+      ];
+      
+      if (!allowedTypes.includes(file.type)) {
+        toast({
+          title: 'Erreur',
+          description: 'Format de fichier non supporté. Utilisez PDF, DOC, DOCX ou TXT',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      setSelectedFile(file);
+    }
+  };
+
+  const removeFile = () => {
+    setSelectedFile(null);
+    setUploadProgress(0);
+  };
+
+  const uploadFile = async (topicId: string): Promise<string | null> => {
+    if (!selectedFile || !user) return null;
+
+    try {
+      const fileExt = selectedFile.name.split('.').pop();
+      const fileName = `${topicId}_${Date.now()}.${fileExt}`;
+      const filePath = `topic-proposals/${user.id}/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('documents')
+        .upload(filePath, selectedFile, {
+          cacheControl: '3600',
+          upsert: false,
+        });
+
+      if (uploadError) throw uploadError;
+
+      return filePath;
+    } catch (error: any) {
+      console.error('Error uploading file:', error);
+      throw error;
     }
   };
 
@@ -103,7 +169,8 @@ export function ProposeTopicDialog({ onTopicProposed }: ProposeTopicDialogProps)
     setLoading(true);
 
     try {
-      const { error } = await supabase
+      // Créer le sujet d'abord
+      const { data: topicData, error: topicError } = await supabase
         .from('thesis_topics')
         .insert({
           title: formData.title.trim(),
@@ -113,13 +180,44 @@ export function ProposeTopicDialog({ onTopicProposed }: ProposeTopicDialogProps)
           proposed_by: user.id,
           status: 'pending', // En attente de validation
           supervisor_id: hasRole('professor') || hasRole('department_head') ? user.id : null,
-        });
+        })
+        .select()
+        .single();
 
-      if (error) throw error;
+      if (topicError) throw topicError;
+
+      // Upload du fichier si présent
+      let filePath: string | null = null;
+      if (selectedFile && topicData) {
+        try {
+          filePath = await uploadFile(topicData.id);
+          
+          // Mettre à jour le sujet avec le chemin du fichier
+          if (filePath) {
+            const { error: updateError } = await supabase
+              .from('thesis_topics')
+              .update({ attachment_path: filePath })
+              .eq('id', topicData.id);
+
+            if (updateError) {
+              console.error('Error updating topic with file path:', updateError);
+            }
+          }
+        } catch (uploadError: any) {
+          console.error('File upload failed:', uploadError);
+          toast({
+            title: 'Avertissement',
+            description: 'Le sujet a été créé mais le fichier n\'a pas pu être uploadé',
+            variant: 'destructive',
+          });
+        }
+      }
 
       toast({
         title: 'Succès',
-        description: 'Votre sujet a été soumis et est en attente de validation',
+        description: selectedFile 
+          ? 'Votre sujet et le document ont été soumis avec succès'
+          : 'Votre sujet a été soumis et est en attente de validation',
       });
 
       // Reset form
@@ -129,6 +227,8 @@ export function ProposeTopicDialog({ onTopicProposed }: ProposeTopicDialogProps)
         department_id: profile?.department_id || '',
         max_students: 1,
       });
+      setSelectedFile(null);
+      setUploadProgress(0);
       
       setOpen(false);
       onTopicProposed?.();
@@ -237,6 +337,51 @@ export function ProposeTopicDialog({ onTopicProposed }: ProposeTopicDialogProps)
               />
               <p className="text-xs text-muted-foreground">
                 Entre 1 et 10 étudiants
+              </p>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="file">
+              Document joint (optionnel)
+            </Label>
+            <div className="space-y-3">
+              {!selectedFile ? (
+                <div className="flex items-center gap-2">
+                  <Input
+                    id="file"
+                    type="file"
+                    accept=".pdf,.doc,.docx,.txt"
+                    onChange={handleFileChange}
+                    disabled={loading}
+                    className="cursor-pointer"
+                  />
+                  <Upload className="h-4 w-4 text-muted-foreground" />
+                </div>
+              ) : (
+                <div className="flex items-center justify-between p-3 border rounded-lg bg-muted/50">
+                  <div className="flex items-center gap-2">
+                    <FileText className="h-5 w-5 text-primary" />
+                    <div>
+                      <p className="text-sm font-medium">{selectedFile.name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
+                      </p>
+                    </div>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={removeFile}
+                    disabled={loading}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
+              <p className="text-xs text-muted-foreground">
+                Formats acceptés: PDF, DOC, DOCX, TXT (max 10 MB)
               </p>
             </div>
           </div>

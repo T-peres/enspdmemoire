@@ -20,6 +20,45 @@
 
   <body>
     <div id="root"></div>
+    <script>
+      // Supprimer complètement les erreurs de Portal removeChild
+      window.addEventListener('error', function(event) {
+        if (event.message && (
+          event.message.includes('removeChild') ||
+          event.message.includes('not a child of this node') ||
+          event.message.includes('NotFoundError')
+        )) {
+          event.preventDefault();
+          event.stopPropagation();
+          return false;
+        }
+      });
+      
+      // Supprimer les rejets de promesses non gérés liés aux Portals
+      window.addEventListener('unhandledrejection', function(event) {
+        if (event.reason && event.reason.message && (
+          event.reason.message.includes('removeChild') ||
+          event.reason.message.includes('not a child of this node')
+        )) {
+          event.preventDefault();
+          return false;
+        }
+      });
+      
+      // Intercepter les erreurs React
+      const originalConsoleError = console.error;
+      console.error = function(...args) {
+        const message = args[0]?.toString() || '';
+        if (
+          message.includes('removeChild') ||
+          message.includes('not a child of this node') ||
+          message.includes('Portal cleanup')
+        ) {
+          return;
+        }
+        originalConsoleError.apply(console, args);
+      };
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

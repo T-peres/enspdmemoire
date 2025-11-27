@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { ThesisTopic, Department } from '@/types/database';
-import { BookOpen, Users, Clock, CheckCircle, Lock, Search } from 'lucide-react';
+import { BookOpen, Users, Clock, CheckCircle, Lock, Search, FileText, Download } from 'lucide-react';
 
 export default function Topics() {
   const { hasRole, profile } = useAuth();
@@ -199,6 +199,43 @@ export default function Topics() {
                         <span>
                           Encadreur: {topic.supervisor.first_name} {topic.supervisor.last_name}
                         </span>
+                      </div>
+                    )}
+                    {topic.attachment_path && (
+                      <div className="flex items-center gap-2">
+                        <FileText className="h-4 w-4 text-primary" />
+                        <Button
+                          variant="link"
+                          size="sm"
+                          className="h-auto p-0 text-primary"
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            try {
+                              const { data, error } = await supabase.storage
+                                .from('documents')
+                                .download(topic.attachment_path!);
+                              
+                              if (error) throw error;
+                              
+                              const url = URL.createObjectURL(data);
+                              const a = document.createElement('a');
+                              a.href = url;
+                              a.download = topic.attachment_path!.split('/').pop() || 'document';
+                              document.body.appendChild(a);
+                              a.click();
+                              document.body.removeChild(a);
+                              URL.revokeObjectURL(url);
+                              
+                              toast.success('Document téléchargé');
+                            } catch (error: any) {
+                              console.error('Download error:', error);
+                              toast.error('Erreur lors du téléchargement');
+                            }
+                          }}
+                        >
+                          <Download className="h-3 w-3 mr-1" />
+                          Télécharger le document
+                        </Button>
                       </div>
                     )}
                   </div>
