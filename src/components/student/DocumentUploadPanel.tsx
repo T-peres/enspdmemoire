@@ -166,9 +166,11 @@ export function DocumentUploadPanel({ themeId, onSuccess }: DocumentUploadPanelP
           <Label htmlFor="title">Titre du document *</Label>
           <Input
             id="title"
+            name="title"
             value={formData.title}
             onChange={(e) => setFormData({ ...formData, title: e.target.value })}
             placeholder="Ex: Plan détaillé du mémoire"
+            autoComplete="off"
           />
         </div>
 
@@ -187,6 +189,7 @@ export function DocumentUploadPanel({ themeId, onSuccess }: DocumentUploadPanelP
           <Label htmlFor="file">Fichier PDF *</Label>
           <Input
             id="file"
+            name="file"
             type="file"
             accept=".pdf"
             onChange={handleFileChange}

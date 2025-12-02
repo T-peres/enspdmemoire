@@ -137,10 +137,13 @@ export default function Topics() {
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
+              id="search-topics"
+              name="search"
               placeholder="Rechercher un sujet..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10"
+              autoComplete="off"
             />
           </div>
           <Select value={selectedDepartment} onValueChange={setSelectedDepartment}>
@@ -151,7 +154,7 @@ export default function Topics() {
               <SelectItem value="all">Tous les départements</SelectItem>
               {departments.map((dept) => (
                 <SelectItem key={dept.id} value={dept.id}>
-                  {dept.code}
+                  {dept.code} - {dept.name}
                 </SelectItem>
               ))}
             </SelectContent>

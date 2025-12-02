@@ -13,6 +13,7 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
   hasRole: (role: AppRole) => boolean;
+  getPrimaryRole: () => AppRole | null;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -119,6 +120,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return roles.includes(role);
   };
 
+  const getPrimaryRole = (): AppRole | null => {
+    // Priority order: admin > department_head > supervisor > jury > student
+    if (roles.includes('admin') || roles.includes('super_admin')) return 'admin';
+    if (roles.includes('department_head')) return 'department_head';
+    if (roles.includes('supervisor')) return 'supervisor';
+    if (roles.includes('jury')) return 'jury';
+    if (roles.includes('student')) return 'student';
+    return null;
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -131,6 +142,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         signIn,
         signOut,
         hasRole,
+        getPrimaryRole,
       }}
     >
       {children}

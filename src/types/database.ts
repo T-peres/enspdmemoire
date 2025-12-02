@@ -310,3 +310,120 @@ export interface StudentProgress {
   supervisor_first_name?: string;
   supervisor_last_name?: string;
 }
+
+export interface MeetingReport {
+  id: string;
+  meeting_id: string;
+  theme_id: string;
+  student_id: string;
+  supervisor_id: string;
+  meeting_date: string;
+  objectives_set: string;
+  work_accomplished: string;
+  chapters_progress?: any;
+  problems_encountered?: string;
+  solutions_proposed?: string;
+  recommendations: string;
+  next_steps: string;
+  next_meeting_date?: string;
+  progress_rating?: number;
+  engagement_rating?: number;
+  quality_rating?: number;
+  status: 'draft' | 'submitted' | 'validated' | 'rejected';
+  submitted_at?: string;
+  validated_at?: string;
+  validated_by?: string;
+  rejection_reason?: string;
+  supervisor_signed: boolean;
+  supervisor_signed_at?: string;
+  student_acknowledged: boolean;
+  student_acknowledged_at?: string;
+  created_at: string;
+  updated_at: string;
+  created_by?: string;
+  student?: Profile;
+  supervisor?: Profile;
+}
+
+export interface EvaluationCriteria {
+  id: string;
+  department_id: string;
+  category: 'supervision' | 'report' | 'defense';
+  name: string;
+  description?: string;
+  weight: number;
+  max_points: number;
+  is_active: boolean;
+  display_order: number;
+  created_at: string;
+  updated_at: string;
+  created_by?: string;
+}
+
+export interface DefenseMinute {
+  id: string;
+  minute_type: 'individual' | 'global';
+  defense_session_id?: string;
+  student_id?: string;
+  theme_id?: string;
+  department_id: string;
+  defense_date: string;
+  defense_location?: string;
+  jury_members: any;
+  jury_president_id?: string;
+  final_grade?: number;
+  mention?: string;
+  decision?: 'approved' | 'approved_with_corrections' | 'rejected';
+  corrections_required: boolean;
+  corrections_deadline?: string;
+  corrections_description?: string;
+  evaluation_details?: any;
+  deliberation_notes?: string;
+  signatures?: any;
+  all_signed: boolean;
+  pdf_path?: string;
+  pdf_generated_at?: string;
+  status: 'draft' | 'pending_signatures' | 'completed' | 'archived';
+  created_at: string;
+  updated_at: string;
+  created_by?: string;
+  finalized_at?: string;
+  finalized_by?: string;
+}
+
+export interface DepartmentSettings {
+  id: string;
+  department_id: string;
+  supervision_weight: number;
+  report_weight: number;
+  defense_weight: number;
+  plagiarism_threshold: number;
+  min_passing_grade: number;
+  max_students_per_supervisor: number;
+  min_meetings_required: number;
+  min_fiche_suivi_required: number;
+  academic_year: string;
+  theme_submission_start_date?: string;
+  theme_submission_end_date?: string;
+  theme_selection_start_date?: string;
+  theme_selection_end_date?: string;
+  report_submission_start_date?: string;
+  report_submission_end_date?: string;
+  defense_start_date?: string;
+  defense_end_date?: string;
+  defense_duration_minutes: number;
+  min_jury_members: number;
+  max_jury_members: number;
+  enable_email_notifications: boolean;
+  enable_deadline_reminders: boolean;
+  deadline_reminder_days: number;
+  required_document_types?: any;
+  defense_minutes_template?: string;
+  convocation_template?: string;
+  certificate_template?: string;
+  custom_evaluation_criteria?: any;
+  created_at: string;
+  updated_at: string;
+  created_by?: string;
+  updated_by?: string;
+}

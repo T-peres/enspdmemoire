@@ -32,12 +32,52 @@ export function Navbar() {
 
           {user ? (
             <div className="flex items-center gap-4">
-              <Link to="/topics">
-                <Button variant="ghost" size="sm" className="gap-2">
-                  <BookOpen className="h-4 w-4" />
-                  Sujets
-                </Button>
-              </Link>
+              {/* Show Topics link for students and supervisors */}
+              {(hasRole('student') || hasRole('supervisor')) && (
+                <Link to="/topics">
+                  <Button variant="ghost" size="sm" className="gap-2">
+                    <BookOpen className="h-4 w-4" />
+                    Sujets
+                  </Button>
+                </Link>
+              )}
+
+              {/* Show Dashboard link based on role */}
+              {hasRole('supervisor') && (
+                <Link to="/supervisor-dashboard">
+                  <Button variant="ghost" size="sm" className="gap-2">
+                    <LayoutDashboard className="h-4 w-4" />
+                    Tableau de Bord
+                  </Button>
+                </Link>
+              )}
+
+              {hasRole('department_head') && (
+                <Link to="/department-dashboard">
+                  <Button variant="ghost" size="sm" className="gap-2">
+                    <LayoutDashboard className="h-4 w-4" />
+                    Département
+                  </Button>
+                </Link>
+              )}
+
+              {hasRole('jury') && (
+                <Link to="/jury-dashboard">
+                  <Button variant="ghost" size="sm" className="gap-2">
+                    <GraduationCap className="h-4 w-4" />
+                    Jury
+                  </Button>
+                </Link>
+              )}
+
+              {(hasRole('admin') || hasRole('super_admin')) && (
+                <Link to="/admin">
+                  <Button variant="ghost" size="sm" className="gap-2">
+                    <Shield className="h-4 w-4" />
+                    Admin
+                  </Button>
+                </Link>
+              )}
 
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -58,20 +98,47 @@ export function Navbar() {
                     <User className="mr-2 h-4 w-4" />
                     Mon Profil
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => navigate('/my-thesis')}>
-                    <BookOpen className="mr-2 h-4 w-4" />
-                    Mon Mémoire
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => navigate('/my-proposed-topics')}>
-                    <FileText className="mr-2 h-4 w-4" />
-                    Mes Sujets Proposés
-                  </DropdownMenuItem>
+                  
+                  {hasRole('student') && (
+                    <>
+                      <DropdownMenuItem onClick={() => navigate('/my-thesis')}>
+                        <BookOpen className="mr-2 h-4 w-4" />
+                        Mon Mémoire
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => navigate('/topics')}>
+                        <FileText className="mr-2 h-4 w-4" />
+                        Explorer les Sujets
+                      </DropdownMenuItem>
+                    </>
+                  )}
+                  
+                  {hasRole('supervisor') && (
+                    <>
+                      <DropdownMenuItem onClick={() => navigate('/supervisor-dashboard')}>
+                        <LayoutDashboard className="mr-2 h-4 w-4" />
+                        Tableau de Bord
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => navigate('/my-proposed-topics')}>
+                        <FileText className="mr-2 h-4 w-4" />
+                        Mes Sujets Proposés
+                      </DropdownMenuItem>
+                    </>
+                  )}
+                  
                   {hasRole('department_head') && (
                     <DropdownMenuItem onClick={() => navigate('/department-dashboard')}>
                       <LayoutDashboard className="mr-2 h-4 w-4" />
                       Tableau de Bord Département
                     </DropdownMenuItem>
                   )}
+                  
+                  {hasRole('jury') && (
+                    <DropdownMenuItem onClick={() => navigate('/jury-dashboard')}>
+                      <GraduationCap className="mr-2 h-4 w-4" />
+                      Tableau de Bord Jury
+                    </DropdownMenuItem>
+                  )}
+                  
                   {(hasRole('admin') || hasRole('super_admin')) && (
                     <DropdownMenuItem onClick={() => navigate('/admin')}>
                       <Shield className="mr-2 h-4 w-4" />

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { MeetingForm } from './MeetingForm';
+import { MeetingReportForm } from './MeetingReportForm';
 import { MeetingsList } from './MeetingsList';
 import { Plus, History } from 'lucide-react';
 
@@ -39,7 +39,7 @@ export function MeetingForms({ themeId, studentId }: MeetingFormsProps) {
           </TabsList>
           
           <TabsContent value="new" className="mt-4">
-            <MeetingForm
+            <MeetingReportForm
               themeId={themeId}
               studentId={studentId}
               onSuccess={handleMeetingCreated}

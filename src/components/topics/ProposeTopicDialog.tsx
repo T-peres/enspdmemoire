@@ -61,12 +61,14 @@ export function ProposeTopicDialog({ onTopicProposed }: ProposeTopicDialogProps)
       .order('name');
     
     if (error) {
+      console.error('Erreur chargement départements:', error);
       toast({
         title: 'Erreur',
         description: 'Impossible de charger les départements',
         variant: 'destructive',
       });
     } else {
+      console.log('Départements chargés dans ProposeTopicDialog:', data);
       setDepartments(data || []);
     }
   };
@@ -273,11 +275,13 @@ export function ProposeTopicDialog({ onTopicProposed }: ProposeTopicDialogProps)
             </Label>
             <Input
               id="title"
+              name="title"
               value={formData.title}
               onChange={(e) => setFormData({ ...formData, title: e.target.value })}
               placeholder="Ex: Développement d'une application mobile pour..."
               maxLength={200}
               required
+              autoComplete="off"
             />
             <p className="text-xs text-muted-foreground">
               {formData.title.length}/200 caractères
@@ -306,20 +310,30 @@ export function ProposeTopicDialog({ onTopicProposed }: ProposeTopicDialogProps)
               </Label>
               <Select
                 value={formData.department_id}
-                onValueChange={(value) => setFormData({ ...formData, department_id: value })}
+                onValueChange={(value) => {
+                  console.log('Département sélectionné:', value);
+                  setFormData({ ...formData, department_id: value });
+                }}
                 required
               >
-                <SelectTrigger>
+                <SelectTrigger onClick={() => console.log('SelectTrigger cliqué, départements:', departments.length)}>
                   <SelectValue placeholder="Sélectionnez un département" />
                 </SelectTrigger>
                 <SelectContent>
-                  {departments.map((dept) => (
-                    <SelectItem key={dept.id} value={dept.id}>
-                      {dept.name}
-                    </SelectItem>
-                  ))}
+                  {departments.length === 0 ? (
+                    <div className="p-2 text-sm text-muted-foreground">Chargement...</div>
+                  ) : (
+                    departments.map((dept) => (
+                      <SelectItem key={dept.id} value={dept.id}>
+                        {dept.code} - {dept.name}
+                      </SelectItem>
+                    ))
+                  )}
                 </SelectContent>
               </Select>
+              <p className="text-xs text-muted-foreground">
+                {departments.length} département(s) disponible(s)
+              </p>
             </div>
 
             <div className="space-y-2">
@@ -328,12 +342,14 @@ export function ProposeTopicDialog({ onTopicProposed }: ProposeTopicDialogProps)
               </Label>
               <Input
                 id="max_students"
+                name="max_students"
                 type="number"
                 min={1}
                 max={10}
                 value={formData.max_students}
                 onChange={(e) => setFormData({ ...formData, max_students: parseInt(e.target.value) || 1 })}
                 required
+                autoComplete="off"
               />
               <p className="text-xs text-muted-foreground">
                 Entre 1 et 10 étudiants
@@ -350,6 +366,7 @@ export function ProposeTopicDialog({ onTopicProposed }: ProposeTopicDialogProps)
                 <div className="flex items-center gap-2">
                   <Input
                     id="file"
+                    name="file"
                     type="file"
                     accept=".pdf,.doc,.docx,.txt"
                     onChange={handleFileChange}

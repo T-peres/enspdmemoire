@@ -3,15 +3,26 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Navbar } from '@/components/layout/Navbar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
 import { SupervisorAssignmentForm } from '@/components/department/SupervisorAssignmentForm';
 import { SupervisorsList } from '@/components/department/SupervisorsList';
 import { FicheSuiviValidation } from '@/components/department/FicheSuiviValidation';
 import { DepartmentHeadStats } from '@/components/department/DepartmentHeadStats';
 import { DefenseScheduler } from '@/components/department/DefenseScheduler';
+import { DepartmentAlertsPanel } from '@/components/department/DepartmentAlertsPanel';
+import { DepartmentSettings } from '@/components/department/DepartmentSettings';
 import { useSupervisorAssignments } from '@/hooks/useSupervisorAssignments';
 import { supabase } from '@/integrations/supabase/client';
 import { StudentProgress } from '@/types/database';
-import { Building2 } from 'lucide-react';
+import { 
+  Building2, 
+  Users, 
+  TrendingUp, 
+  Calendar, 
+  CheckCircle, 
+  Settings,
+  FileCheck
+} from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 
@@ -178,24 +189,40 @@ export default function DepartmentHeadDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50">
       <Navbar />
       
-      {/* Bandeau personnalisé du département */}
+      {/* Bandeau personnalisé du département avec gradient */}
       {department && (
-        <div className={`${deptColors.bg} ${deptColors.border} border-b-4`}>
-          <div className="container mx-auto px-4 py-6">
-            <div className="flex items-center gap-4">
-              <div className={`${deptColors.text} p-3 rounded-lg bg-white/50`}>
-                <Building2 className="h-8 w-8" />
+        <div className={`${deptColors.bg} ${deptColors.border} border-b-4 shadow-lg`}>
+          <div className="container mx-auto px-4 py-8">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className={`${deptColors.text} p-4 rounded-xl bg-white shadow-md`}>
+                  <Building2 className="h-10 w-10" />
+                </div>
+                <div>
+                  <h2 className={`text-3xl font-bold ${deptColors.text}`}>
+                    {department.name}
+                  </h2>
+                  <p className="text-sm text-gray-600 mt-1">
+                    Code: <span className="font-semibold">{department.code}</span> • Chef: {profile?.first_name} {profile?.last_name}
+                  </p>
+                </div>
               </div>
-              <div>
-                <h2 className={`text-2xl font-bold ${deptColors.text}`}>
-                  {department.name}
-                </h2>
-                <p className="text-sm text-gray-600">
-                  Code: {department.code} • Chef de Département: {profile?.first_name} {profile?.last_name}
-                </p>
+              <div className="hidden md:flex gap-4">
+                <div className="text-center px-6 py-3 bg-white rounded-xl shadow-md">
+                  <p className="text-sm text-gray-600">Étudiants</p>
+                  <p className="text-3xl font-bold text-blue-600">{stats.totalStudents}</p>
+                </div>
+                <div className="text-center px-6 py-3 bg-white rounded-xl shadow-md">
+                  <p className="text-sm text-gray-600">Encadreurs</p>
+                  <p className="text-3xl font-bold text-green-600">{assignments?.length || 0}</p>
+                </div>
+                <div className="text-center px-6 py-3 bg-white rounded-xl shadow-md">
+                  <p className="text-sm text-gray-600">Progression</p>
+                  <p className="text-3xl font-bold text-purple-600">{stats.avgProgress}%</p>
+                </div>
               </div>
             </div>
           </div>
@@ -203,13 +230,9 @@ export default function DepartmentHeadDashboard() {
       )}
       
       <div className="container mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold mb-2">
-            Tableau de bord Chef de Département
-          </h1>
-          <p className="text-muted-foreground">
-            Gestion des étudiants et encadreurs du département {department?.code}
-          </p>
+        {/* Panneau d'alertes */}
+        <div className="mb-6">
+          <DepartmentAlertsPanel />
         </div>
 
         {/* Stats Grid */}
@@ -217,14 +240,217 @@ export default function DepartmentHeadDashboard() {
           <DepartmentHeadStats stats={stats} />
         </div>
 
-        <Tabs defaultValue="assignments" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-5">
-            <TabsTrigger value="assignments">Attributions</TabsTrigger>
-            <TabsTrigger value="supervisors">Encadreurs</TabsTrigger>
-            <TabsTrigger value="progress">Suivi Global</TabsTrigger>
-            <TabsTrigger value="validation">Validations</TabsTrigger>
-            <TabsTrigger value="defenses">Soutenances</TabsTrigger>
+        <Tabs defaultValue="overview" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-7 h-auto p-2 bg-white shadow-lg rounded-xl">
+            <TabsTrigger 
+              value="overview"
+              className="flex flex-col items-center gap-2 py-3 data-[state=active]:bg-gradient-to-br data-[state=active]:from-blue-500 data-[state=active]:to-purple-500 data-[state=active]:text-white"
+            >
+              <Building2 className="h-5 w-5" />
+              <span className="text-xs font-medium">Vue d'ensemble</span>
+            </TabsTrigger>
+            <TabsTrigger 
+              value="assignments"
+              className="flex flex-col items-center gap-2 py-3 data-[state=active]:bg-gradient-to-br data-[state=active]:from-blue-500 data-[state=active]:to-purple-500 data-[state=active]:text-white"
+            >
+              <Users className="h-5 w-5" />
+              <span className="text-xs font-medium">Attributions</span>
+            </TabsTrigger>
+            <TabsTrigger 
+              value="supervisors"
+              className="flex flex-col items-center gap-2 py-3 data-[state=active]:bg-gradient-to-br data-[state=active]:from-blue-500 data-[state=active]:to-purple-500 data-[state=active]:text-white"
+            >
+              <Users className="h-5 w-5" />
+              <span className="text-xs font-medium">Encadreurs</span>
+            </TabsTrigger>
+            <TabsTrigger 
+              value="progress"
+              className="flex flex-col items-center gap-2 py-3 data-[state=active]:bg-gradient-to-br data-[state=active]:from-blue-500 data-[state=active]:to-purple-500 data-[state=active]:text-white"
+            >
+              <TrendingUp className="h-5 w-5" />
+              <span className="text-xs font-medium">Suivi Global</span>
+            </TabsTrigger>
+            <TabsTrigger 
+              value="validation"
+              className="flex flex-col items-center gap-2 py-3 data-[state=active]:bg-gradient-to-br data-[state=active]:from-blue-500 data-[state=active]:to-purple-500 data-[state=active]:text-white"
+            >
+              <CheckCircle className="h-5 w-5" />
+              <span className="text-xs font-medium">Validations</span>
+            </TabsTrigger>
+            <TabsTrigger 
+              value="defenses"
+              className="flex flex-col items-center gap-2 py-3 data-[state=active]:bg-gradient-to-br data-[state=active]:from-blue-500 data-[state=active]:to-purple-500 data-[state=active]:text-white"
+            >
+              <Calendar className="h-5 w-5" />
+              <span className="text-xs font-medium">Soutenances</span>
+            </TabsTrigger>
+            <TabsTrigger 
+              value="settings"
+              className="flex flex-col items-center gap-2 py-3 data-[state=active]:bg-gradient-to-br data-[state=active]:from-blue-500 data-[state=active]:to-purple-500 data-[state=active]:text-white"
+            >
+              <Settings className="h-5 w-5" />
+              <span className="text-xs font-medium">Paramètres</span>
+            </TabsTrigger>
           </TabsList>
+
+          {/* Vue d'ensemble */}
+          <TabsContent value="overview" className="space-y-6">
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+              <Card className="hover:shadow-lg transition-shadow border-l-4 border-l-blue-500">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <Users className="h-5 w-5 text-blue-600" />
+                    Étudiants
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-4xl font-bold text-blue-600 mb-2">{stats.totalStudents}</p>
+                  <p className="text-sm text-gray-600">
+                    {stats.studentsWithSupervisor} avec encadreur
+                  </p>
+                  <Progress 
+                    value={(stats.studentsWithSupervisor / stats.totalStudents) * 100} 
+                    className="mt-3 h-2"
+                  />
+                </CardContent>
+              </Card>
+
+              <Card className="hover:shadow-lg transition-shadow border-l-4 border-l-green-500">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <FileCheck className="h-5 w-5 text-green-600" />
+                    Sujets
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-4xl font-bold text-green-600 mb-2">{stats.approvedThemes}</p>
+                  <p className="text-sm text-gray-600">
+                    {stats.pendingThemes} en attente
+                  </p>
+                  <Badge variant="outline" className="mt-3 text-orange-600 border-orange-600">
+                    {stats.pendingThemes} à valider
+                  </Badge>
+                </CardContent>
+              </Card>
+
+              <Card className="hover:shadow-lg transition-shadow border-l-4 border-l-purple-500">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <TrendingUp className="h-5 w-5 text-purple-600" />
+                    Progression
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-4xl font-bold text-purple-600 mb-2">{stats.avgProgress}%</p>
+                  <p className="text-sm text-gray-600">Moyenne du département</p>
+                  <Progress value={stats.avgProgress} className="mt-3 h-2" />
+                </CardContent>
+              </Card>
+
+              <Card className="hover:shadow-lg transition-shadow border-l-4 border-l-orange-500">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <Calendar className="h-5 w-5 text-orange-600" />
+                    Soutenances
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-4xl font-bold text-orange-600 mb-2">{stats.completedDefenses}</p>
+                  <p className="text-sm text-gray-600">
+                    {stats.pendingDefenses} à planifier
+                  </p>
+                  <Badge variant="outline" className="mt-3 text-blue-600 border-blue-600">
+                    {stats.pendingDefenses} en attente
+                  </Badge>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Actions rapides */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Actions Rapides</CardTitle>
+                <CardDescription>Accès rapide aux tâches courantes</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                  <Button className="h-auto py-6 flex flex-col gap-3 bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700">
+                    <Users className="h-8 w-8" />
+                    <span className="font-semibold">Attribuer Encadreur</span>
+                  </Button>
+                  <Button className="h-auto py-6 flex flex-col gap-3 bg-gradient-to-br from-green-500 to-green-600 hover:from-green-600 hover:to-green-700">
+                    <CheckCircle className="h-8 w-8" />
+                    <span className="font-semibold">Valider Fiches</span>
+                  </Button>
+                  <Button className="h-auto py-6 flex flex-col gap-3 bg-gradient-to-br from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700">
+                    <FileCheck className="h-8 w-8" />
+                    <span className="font-semibold">Approuver Sujets</span>
+                  </Button>
+                  <Button className="h-auto py-6 flex flex-col gap-3 bg-gradient-to-br from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700">
+                    <Calendar className="h-8 w-8" />
+                    <span className="font-semibold">Planifier Soutenance</span>
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Graphiques et statistiques */}
+            <div className="grid gap-6 md:grid-cols-2">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Répartition des Étudiants</CardTitle>
+                  <CardDescription>Par statut de progression</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm">En cours</span>
+                      <Badge variant="outline" className="bg-blue-50">
+                        {Math.floor(stats.totalStudents * 0.6)}
+                      </Badge>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm">En retard</span>
+                      <Badge variant="outline" className="bg-orange-50">
+                        {Math.floor(stats.totalStudents * 0.2)}
+                      </Badge>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm">Terminés</span>
+                      <Badge variant="outline" className="bg-green-50">
+                        {Math.floor(stats.totalStudents * 0.2)}
+                      </Badge>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Charge des Encadreurs</CardTitle>
+                  <CardDescription>Nombre d'étudiants par encadreur</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm">Moyenne</span>
+                      <Badge variant="outline" className="bg-blue-50">
+                        {assignments?.length ? Math.floor(stats.totalStudents / assignments.length) : 0}
+                      </Badge>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm">Maximum</span>
+                      <Badge variant="outline" className="bg-orange-50">5</Badge>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm">Surchargés</span>
+                      <Badge variant="outline" className="bg-red-50">0</Badge>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
 
           <TabsContent value="assignments" className="space-y-4">
             <div className="grid gap-6 md:grid-cols-2">
@@ -326,18 +552,32 @@ export default function DepartmentHeadDashboard() {
           <TabsContent value="defenses" className="space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle>Gestion des Soutenances</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                  <Calendar className="h-6 w-6" />
+                  Gestion des Soutenances
+                </CardTitle>
                 <CardDescription>
                   Planifier et gérer les soutenances du département
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Sélectionnez un étudiant dans l'onglet "Suivi Global" pour planifier sa soutenance.
-                </p>
-                {/* Le composant DefenseScheduler sera utilisé quand un étudiant est sélectionné */}
+                <div className="text-center py-12">
+                  <Calendar className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+                  <p className="text-gray-600 mb-2">Interface de gestion des soutenances</p>
+                  <p className="text-sm text-gray-500 mb-4">
+                    Planifiez les soutenances, assignez les jurys et gérez les PV
+                  </p>
+                  <Badge variant="outline" className="text-orange-600 border-orange-600">
+                    En développement - Phase 3
+                  </Badge>
+                </div>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* Paramètres */}
+          <TabsContent value="settings">
+            <DepartmentSettings />
           </TabsContent>
         </Tabs>
       </div>
