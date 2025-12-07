@@ -69,7 +69,7 @@ export function SupervisorAlertsComplete() {
 
         // 2. Vérifier les fiches de rencontre manquantes
         const { data: lastMeeting } = await supabase
-          .from('meeting_reports')
+          .from('meetings')
           .select('meeting_date')
           .eq('student_id', studentId)
           .eq('supervisor_id', profile.id)
@@ -96,7 +96,7 @@ export function SupervisorAlertsComplete() {
 
         // 3. Vérifier les fiches de rencontre en brouillon
         const { data: draftReports, count: draftCount } = await supabase
-          .from('meeting_reports')
+          .from('meetings')
           .select('*', { count: 'exact', head: true })
           .eq('student_id', studentId)
           .eq('supervisor_id', profile.id)

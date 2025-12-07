@@ -147,7 +147,7 @@ export function FicheSuiviValidation() {
           </div>
         ) : (
           <div className="space-y-6">
-            {fichesEnAttente.map((fiche) => (
+            {(fichesEnAttente || []).map((fiche) => (
               <div key={fiche.id} className="p-6 border-2 rounded-lg bg-yellow-50 border-yellow-200">
                 {/* En-tête */}
                 <div className="flex items-start justify-between mb-4">

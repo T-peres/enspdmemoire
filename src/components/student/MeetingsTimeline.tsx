@@ -47,7 +47,7 @@ export function MeetingsTimeline({ meetings }: MeetingsTimelineProps) {
     toast.info('Génération du PDF en cours...');
   };
 
-  if (meetings.length === 0) {
+  if (!meetings || meetings.length === 0) {
     return (
       <Card>
         <CardContent className="pt-6">
@@ -72,7 +72,7 @@ export function MeetingsTimeline({ meetings }: MeetingsTimelineProps) {
           {/* Timeline line */}
           <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-border" />
 
-          {meetings.map((meeting, index) => (
+          {(meetings || []).map((meeting, index) => (
             <div key={meeting.id} className="relative pl-10">
               {/* Timeline dot */}
               <div className={`absolute left-2.5 top-2 h-3 w-3 rounded-full border-2 ${

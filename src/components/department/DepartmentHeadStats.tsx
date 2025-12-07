@@ -1,22 +1,20 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Users, UserCheck, FileText, Clock, Calendar, CheckCircle, TrendingUp, AlertTriangle } from 'lucide-react';
+import { useDepartmentHeadStats } from '@/hooks/useDashboardStats';
 
-interface DepartmentStats {
-  totalStudents: number;
-  studentsWithSupervisor: number;
-  pendingThemes: number;
-  approvedThemes: number;
-  pendingMeetings: number;
-  pendingDefenses: number;
-  completedDefenses: number;
-  avgProgress: number;
-}
+export function DepartmentHeadStats() {
+  const { stats, loading } = useDepartmentHeadStats();
 
-interface DepartmentHeadStatsProps {
-  stats: DepartmentStats;
-}
-
-export function DepartmentHeadStats({ stats }: DepartmentHeadStatsProps) {
+  if (loading) {
+    return (
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        {[...Array(8)].map((_, i) => (
+          <Skeleton key={i} className="h-32" />
+        ))}
+      </div>
+    );
+  }
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
       <Card>

@@ -1,20 +1,20 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Users, Clock, CheckCircle, FileText, AlertTriangle, Calendar } from 'lucide-react';
+import { useSupervisorDashboardStats } from '@/hooks/useDashboardStats';
 
-interface SupervisorStats {
-  totalStudents: number;
-  pendingThemes: number;
-  approvedThemes: number;
-  documentsToReview: number;
-  pendingMeetings: number;
-  alertsCount: number;
-}
+export function SupervisorDashboardStats() {
+  const { stats, loading } = useSupervisorDashboardStats();
 
-interface SupervisorDashboardStatsProps {
-  stats: SupervisorStats;
-}
-
-export function SupervisorDashboardStats({ stats }: SupervisorDashboardStatsProps) {
+  if (loading) {
+    return (
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        {[...Array(6)].map((_, i) => (
+          <Skeleton key={i} className="h-32" />
+        ))}
+      </div>
+    );
+  }
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
       <Card>

@@ -12,6 +12,8 @@ import { ReportEvaluation } from '@/components/supervisor/ReportEvaluation';
 import { SupervisorMessages } from '@/components/supervisor/SupervisorMessages';
 import { SupervisorAlertsComplete } from '@/components/supervisor/SupervisorAlertsComplete';
 import { MeetingReportFormComplete } from '@/components/supervisor/MeetingReportFormComplete';
+import { SupervisorDashboardHeader } from '@/components/supervisor/SupervisorDashboardHeader';
+import { useSupervisorDashboardStats } from '@/hooks/useDashboardStats';
 import { 
   Users, 
   FileText, 
@@ -25,6 +27,7 @@ import {
 
 export default function SupervisorDashboard() {
   const { profile } = useAuth();
+  const { stats } = useSupervisorDashboardStats();
   const [selectedStudent, setSelectedStudent] = useState<any>(null);
 
   return (
@@ -33,26 +36,7 @@ export default function SupervisorDashboard() {
       
       <div className="container mx-auto px-4 py-8">
         {/* En-tête avec gradient */}
-        <div className="mb-8 p-6 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl text-white shadow-xl">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-4xl font-bold mb-2">Tableau de bord Encadreur</h1>
-              <p className="text-blue-100 text-lg">
-                Bienvenue, {profile?.first_name} {profile?.last_name}
-              </p>
-            </div>
-            <div className="hidden md:flex items-center gap-4">
-              <div className="text-center px-6 py-3 bg-white/20 rounded-xl backdrop-blur-sm">
-                <p className="text-sm text-blue-100">Étudiants encadrés</p>
-                <p className="text-3xl font-bold">5</p>
-              </div>
-              <div className="text-center px-6 py-3 bg-white/20 rounded-xl backdrop-blur-sm">
-                <p className="text-sm text-blue-100">Fiches en attente</p>
-                <p className="text-3xl font-bold">3</p>
-              </div>
-            </div>
-          </div>
-        </div>
+        <SupervisorDashboardHeader />
 
         {/* Centre d'alertes */}
         <div className="mb-6">
@@ -122,7 +106,7 @@ export default function SupervisorDashboard() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-3xl font-bold text-blue-600 mb-2">5</p>
+                  <p className="text-3xl font-bold text-blue-600 mb-2">{stats.totalStudents}</p>
                   <p className="text-sm text-gray-600">Étudiants encadrés actuellement</p>
                   <Button variant="outline" size="sm" className="mt-4 w-full">
                     Voir la liste
@@ -134,12 +118,12 @@ export default function SupervisorDashboard() {
                 <CardHeader className="pb-3">
                   <CardTitle className="text-lg flex items-center gap-2">
                     <Calendar className="h-5 w-5 text-green-600" />
-                    Rencontres
+                    Fiches de Suivi
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-3xl font-bold text-green-600 mb-2">12</p>
-                  <p className="text-sm text-gray-600">Fiches de rencontre ce mois</p>
+                  <p className="text-3xl font-bold text-green-600 mb-2">{stats.pendingMeetings}</p>
+                  <p className="text-sm text-gray-600">En attente de validation</p>
                   <Button variant="outline" size="sm" className="mt-4 w-full">
                     Nouvelle fiche
                   </Button>
@@ -154,7 +138,7 @@ export default function SupervisorDashboard() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-3xl font-bold text-orange-600 mb-2">8</p>
+                  <p className="text-3xl font-bold text-orange-600 mb-2">{stats.documentsToReview}</p>
                   <p className="text-sm text-gray-600">Documents en attente de révision</p>
                   <Button variant="outline" size="sm" className="mt-4 w-full">
                     Consulter

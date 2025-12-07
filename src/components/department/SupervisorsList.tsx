@@ -90,8 +90,8 @@ export function SupervisorsList() {
     return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
   };
 
-  const availableSupervisors = supervisors.filter(s => s.is_available).length;
-  const busySupervisors = supervisors.filter(s => !s.is_available).length;
+  const availableSupervisors = (supervisors || []).filter(s => s.is_available).length;
+  const busySupervisors = (supervisors || []).filter(s => !s.is_available).length;
 
   if (loading) {
     return (
@@ -133,7 +133,7 @@ export function SupervisorsList() {
           </div>
         ) : (
           <div className="space-y-3">
-            {supervisors.map((supervisor) => (
+            {(supervisors || []).map((supervisor) => (
               <div
                 key={supervisor.id}
                 className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors"

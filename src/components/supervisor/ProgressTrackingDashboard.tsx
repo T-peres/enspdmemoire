@@ -171,13 +171,13 @@ export function ProgressTrackingDashboard() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {students.length === 0 ? (
+          {!students || students.length === 0 ? (
             <p className="text-sm text-gray-500 text-center py-4">
               Aucun étudiant à encadrer
             </p>
           ) : (
             <div className="space-y-4">
-              {students.map((student) => {
+              {(students || []).map((student) => {
                 const status = getProgressStatus(student.overall_progress);
                 return (
                   <div key={student.id} className="border rounded-lg p-4">

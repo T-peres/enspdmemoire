@@ -59,7 +59,7 @@ export function DocumentsHistory({ documents }: DocumentsHistoryProps) {
     window.open(doc.file_path, '_blank');
   };
 
-  if (documents.length === 0) {
+  if (!documents || documents.length === 0) {
     return (
       <Card>
         <CardContent className="pt-6">
@@ -81,7 +81,7 @@ export function DocumentsHistory({ documents }: DocumentsHistoryProps) {
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          {documents.map((doc) => (
+          {(documents || []).map((doc) => (
             <Card key={doc.id} className={
               doc.status === 'approved' ? 'border-green-200' :
               doc.status === 'rejected' ? 'border-red-200' : ''

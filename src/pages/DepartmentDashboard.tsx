@@ -23,6 +23,7 @@ import { PieChart, Pie, Cell, Legend } from 'recharts';
 import { SupervisorAssignmentForm } from '@/components/department/SupervisorAssignmentForm';
 import { SupervisorsList } from '@/components/department/SupervisorsList';
 import { FicheSuiviValidation } from '@/components/department/FicheSuiviValidation';
+import { RecentAssignments } from '@/components/department/RecentAssignments';
 
 const statusColors = {
   pending: 'hsl(var(--warning))',
@@ -475,23 +476,7 @@ export default function DepartmentDashboard() {
             <TabsContent value="assignments" className="space-y-6">
               <div className="grid gap-6 md:grid-cols-2">
                 <SupervisorAssignmentForm />
-                
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <UserCheck className="h-5 w-5" />
-                      Attributions Récentes
-                    </CardTitle>
-                    <CardDescription>
-                      Dernières attributions d'encadreurs du département
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-gray-500 text-center py-8">
-                      Les attributions récentes s'afficheront ici
-                    </p>
-                  </CardContent>
-                </Card>
+                <RecentAssignments />
               </div>
             </TabsContent>
 

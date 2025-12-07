@@ -47,9 +47,9 @@ export function DepartmentAlertsPanel() {
 
       // 1. Fiches de rencontre en attente de validation
       const { count: pendingFichesCount } = await supabase
-        .from('meeting_reports')
+        .from('meetings')
         .select('*', { count: 'exact', head: true })
-        .eq('status', 'submitted')
+        .eq('status', 'scheduled')
         .in('student_id', 
           supabase
             .from('profiles')
@@ -255,7 +255,7 @@ export function DepartmentAlertsPanel() {
           id,
           first_name,
           last_name,
-          meeting_reports!meeting_reports_student_id_fkey(
+          meetings!meetings_student_id_fkey(
             meeting_date
           )
         `)
@@ -263,7 +263,7 @@ export function DepartmentAlertsPanel() {
 
       let studentsWithOldMeetings = 0;
       studentsWithoutRecentMeeting?.forEach(student => {
-        const meetings = student.meeting_reports || [];
+        const meetings = student.meetings || [];
         if (meetings.length === 0) {
           studentsWithOldMeetings++;
         } else {

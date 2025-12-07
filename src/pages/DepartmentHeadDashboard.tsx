@@ -152,8 +152,8 @@ export default function DepartmentHeadDashboard() {
   };
 
   const studentsWithSupervisor = assignments?.length || 0;
-  const studentsWithApprovedTheme = studentProgress.filter(s => s.theme_status === 'approved').length;
-  const studentsWithValidatedProgress = studentProgress.filter(s => s.supervisor_validated).length;
+  const studentsWithApprovedTheme = (studentProgress || []).filter(s => s.theme_status === 'approved').length;
+  const studentsWithValidatedProgress = (studentProgress || []).filter(s => s.supervisor_validated).length;
 
   // Couleurs par département
   const getDepartmentColor = (code: string) => {
@@ -499,7 +499,7 @@ export default function DepartmentHeadDashboard() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {studentProgress.map((student) => (
+                  {(studentProgress || []).map((student) => (
                     <div key={student.student_id} className="p-4 border rounded-lg">
                       <div className="flex items-center justify-between mb-2">
                         <div>

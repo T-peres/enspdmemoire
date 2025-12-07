@@ -125,7 +125,7 @@ export function StudentAlertsComplete() {
 
       // 4. Vérifier les rencontres
       const { data: meetings, count: meetingsCount } = await supabase
-        .from('meeting_reports')
+        .from('meetings')
         .select('*', { count: 'exact' })
         .eq('student_id', profile.id)
         .eq('status', 'validated')

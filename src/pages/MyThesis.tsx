@@ -153,8 +153,8 @@ export default function MyThesis() {
 
       setStats({
         overallProgress: ficheSuivi?.overall_progress || 0,
-        documentsSubmitted: documents.length,
-        meetingsCount: meetings.length,
+        documentsSubmitted: (documents || []).length,
+        meetingsCount: (meetings || []).length,
         pendingActions: pendingCount || 0,
         unreadMessages: unreadCount || 0,
         plagiarismScore: plagiarismReport?.plagiarism_score,

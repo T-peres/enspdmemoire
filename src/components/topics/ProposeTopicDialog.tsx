@@ -22,7 +22,7 @@ import {
 } from '@/components/ui/select';
 import { toast } from '@/hooks/use-toast';
 import { Department } from '@/types/database';
-import { Plus, Loader2, Upload, FileText, X } from 'lucide-react';
+import { Plus, Loader2, Upload, FileText, X, Users } from 'lucide-react';
 
 interface ProposeTopicDialogProps {
   onTopicProposed?: () => void;
@@ -260,172 +260,243 @@ export function ProposeTopicDialog({ onTopicProposed }: ProposeTopicDialogProps)
           Proposer un sujet
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Proposer un nouveau sujet de mémoire</DialogTitle>
-          <DialogDescription>
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader className="space-y-3 pb-4 border-b">
+          <DialogTitle className="text-2xl font-bold">Proposer un nouveau sujet de mémoire</DialogTitle>
+          <DialogDescription className="text-base">
             Soumettez votre proposition de sujet. Elle sera examinée par le chef de département avant validation.
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-6 mt-4">
-          <div className="space-y-2">
-            <Label htmlFor="title">
-              Titre du sujet <span className="text-destructive">*</span>
-            </Label>
-            <Input
-              id="title"
-              name="title"
-              value={formData.title}
-              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-              placeholder="Ex: Développement d'une application mobile pour..."
-              maxLength={200}
-              required
-              autoComplete="off"
-            />
-            <p className="text-xs text-muted-foreground">
-              {formData.title.length}/200 caractères
-            </p>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="description">Description</Label>
-            <Textarea
-              id="description"
-              value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              placeholder="Décrivez les objectifs, la problématique et les technologies envisagées..."
-              rows={6}
-              maxLength={2000}
-            />
-            <p className="text-xs text-muted-foreground">
-              {formData.description.length}/2000 caractères
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="department">
-                Département <span className="text-destructive">*</span>
-              </Label>
-              <Select
-                value={formData.department_id}
-                onValueChange={(value) => {
-                  console.log('Département sélectionné:', value);
-                  setFormData({ ...formData, department_id: value });
-                }}
-                required
-              >
-                <SelectTrigger onClick={() => console.log('SelectTrigger cliqué, départements:', departments.length)}>
-                  <SelectValue placeholder="Sélectionnez un département" />
-                </SelectTrigger>
-                <SelectContent>
-                  {departments.length === 0 ? (
-                    <div className="p-2 text-sm text-muted-foreground">Chargement...</div>
-                  ) : (
-                    departments.map((dept) => (
-                      <SelectItem key={dept.id} value={dept.id}>
-                        {dept.code} - {dept.name}
-                      </SelectItem>
-                    ))
-                  )}
-                </SelectContent>
-              </Select>
-              <p className="text-xs text-muted-foreground">
-                {departments.length} département(s) disponible(s)
-              </p>
+        <form onSubmit={handleSubmit} className="space-y-8 mt-6">
+          {/* Section 1: Informations principales */}
+          <div className="space-y-6">
+            <div className="flex items-center gap-2 pb-2 border-b">
+              <FileText className="h-5 w-5 text-primary" />
+              <h3 className="font-semibold text-lg">Informations du sujet</h3>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="max_students">
-                Nombre d'étudiants max <span className="text-destructive">*</span>
+              <Label htmlFor="title" className="text-base font-medium">
+                Titre du sujet <span className="text-destructive">*</span>
               </Label>
               <Input
-                id="max_students"
-                name="max_students"
-                type="number"
-                min={1}
-                max={10}
-                value={formData.max_students}
-                onChange={(e) => setFormData({ ...formData, max_students: parseInt(e.target.value) || 1 })}
+                id="title"
+                name="title"
+                value={formData.title}
+                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                placeholder="Ex: Développement d'une application mobile pour la gestion des stocks"
+                maxLength={200}
                 required
                 autoComplete="off"
+                className="text-base h-11"
               />
-              <p className="text-xs text-muted-foreground">
-                Entre 1 et 10 étudiants
+              <p className="text-xs text-muted-foreground flex justify-between">
+                <span>Soyez précis et descriptif</span>
+                <span className={formData.title.length > 180 ? 'text-orange-600 font-medium' : ''}>
+                  {formData.title.length}/200
+                </span>
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="description" className="text-base font-medium">
+                Description détaillée
+              </Label>
+              <Textarea
+                id="description"
+                value={formData.description}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                placeholder="Décrivez en détail :&#10;• La problématique à résoudre&#10;• Les objectifs du projet&#10;• Les technologies ou méthodologies envisagées&#10;• Les livrables attendus"
+                rows={8}
+                maxLength={2000}
+                className="text-base resize-none"
+              />
+              <p className="text-xs text-muted-foreground flex justify-between">
+                <span>Plus votre description est détaillée, mieux c'est</span>
+                <span className={formData.description.length > 1800 ? 'text-orange-600 font-medium' : ''}>
+                  {formData.description.length}/2000
+                </span>
               </p>
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="file">
-              Document joint (optionnel)
-            </Label>
+          {/* Section 2: Paramètres */}
+          <div className="space-y-6">
+            <div className="flex items-center gap-2 pb-2 border-b">
+              <Users className="h-5 w-5 text-primary" />
+              <h3 className="font-semibold text-lg">Paramètres</h3>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <Label htmlFor="department" className="text-base font-medium">
+                  Département <span className="text-destructive">*</span>
+                </Label>
+                <Select
+                  value={formData.department_id}
+                  onValueChange={(value) => {
+                    console.log('Département sélectionné:', value);
+                    setFormData({ ...formData, department_id: value });
+                  }}
+                  required
+                >
+                  <SelectTrigger className="h-11" onClick={() => console.log('SelectTrigger cliqué, départements:', departments.length)}>
+                    <SelectValue placeholder="Sélectionnez un département" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {departments.length === 0 ? (
+                      <div className="p-2 text-sm text-muted-foreground">Chargement...</div>
+                    ) : (
+                      departments.map((dept) => (
+                        <SelectItem key={dept.id} value={dept.id}>
+                          <div className="flex items-center gap-2">
+                            <span className="font-semibold">{dept.code}</span>
+                            <span className="text-muted-foreground">•</span>
+                            <span>{dept.name}</span>
+                          </div>
+                        </SelectItem>
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  {departments.length > 0 ? `${departments.length} département(s) disponible(s)` : 'Chargement...'}
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="max_students" className="text-base font-medium">
+                  Nombre d'étudiants maximum <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  id="max_students"
+                  name="max_students"
+                  type="number"
+                  min={1}
+                  max={10}
+                  value={formData.max_students}
+                  onChange={(e) => setFormData({ ...formData, max_students: parseInt(e.target.value) || 1 })}
+                  required
+                  autoComplete="off"
+                  className="h-11 text-base"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Combien d'étudiants peuvent travailler sur ce sujet ? (1-10)
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Section 3: Document joint */}
+          <div className="space-y-6">
+            <div className="flex items-center gap-2 pb-2 border-b">
+              <Upload className="h-5 w-5 text-primary" />
+              <h3 className="font-semibold text-lg">Document complémentaire (optionnel)</h3>
+            </div>
+
             <div className="space-y-3">
               {!selectedFile ? (
-                <div className="flex items-center gap-2">
-                  <Input
-                    id="file"
-                    name="file"
-                    type="file"
-                    accept=".pdf,.doc,.docx,.txt"
-                    onChange={handleFileChange}
-                    disabled={loading}
-                    className="cursor-pointer"
-                  />
-                  <Upload className="h-4 w-4 text-muted-foreground" />
-                </div>
-              ) : (
-                <div className="flex items-center justify-between p-3 border rounded-lg bg-muted/50">
-                  <div className="flex items-center gap-2">
-                    <FileText className="h-5 w-5 text-primary" />
+                <div className="border-2 border-dashed rounded-lg p-6 hover:border-primary/50 transition-colors">
+                  <div className="flex flex-col items-center gap-3 text-center">
+                    <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
+                      <Upload className="h-6 w-6 text-primary" />
+                    </div>
                     <div>
-                      <p className="text-sm font-medium">{selectedFile.name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
+                      <Label htmlFor="file" className="cursor-pointer text-base font-medium hover:text-primary">
+                        Cliquez pour sélectionner un fichier
+                      </Label>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        ou glissez-déposez votre document ici
                       </p>
                     </div>
+                    <Input
+                      id="file"
+                      name="file"
+                      type="file"
+                      accept=".pdf,.doc,.docx,.txt"
+                      onChange={handleFileChange}
+                      disabled={loading}
+                      className="hidden"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      PDF, DOC, DOCX, TXT • Maximum 10 MB
+                    </p>
                   </div>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={removeFile}
-                    disabled={loading}
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
+                </div>
+              ) : (
+                <div className="border-2 border-primary/20 rounded-lg p-4 bg-primary/5">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                        <FileText className="h-6 w-6 text-primary" />
+                      </div>
+                      <div>
+                        <p className="font-medium">{selectedFile.name}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
+                        </p>
+                      </div>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={removeFile}
+                      disabled={loading}
+                      className="hover:bg-destructive/10 hover:text-destructive"
+                    >
+                      <X className="h-5 w-5" />
+                    </Button>
+                  </div>
                 </div>
               )}
-              <p className="text-xs text-muted-foreground">
-                Formats acceptés: PDF, DOC, DOCX, TXT (max 10 MB)
-              </p>
             </div>
           </div>
 
-          <div className="bg-muted/50 border border-border rounded-lg p-4">
-            <p className="text-sm text-muted-foreground">
-              <strong>Note:</strong> Votre sujet sera soumis avec le statut "En attente" et devra être validé par le chef de département avant d'être visible aux étudiants.
-            </p>
+          {/* Note importante */}
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div className="flex gap-3">
+              <div className="flex-shrink-0">
+                <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
+                  <FileText className="h-4 w-4 text-blue-600" />
+                </div>
+              </div>
+              <div className="space-y-1">
+                <p className="font-medium text-blue-900">À propos de la validation</p>
+                <p className="text-sm text-blue-800">
+                  Votre proposition sera soumise avec le statut <strong>"En attente"</strong> et devra être validée par le chef de département avant d'être visible aux étudiants. Vous serez notifié de la décision.
+                </p>
+              </div>
+            </div>
           </div>
 
-          <div className="flex justify-end gap-3 pt-4">
+          {/* Actions */}
+          <div className="flex justify-end gap-3 pt-4 border-t">
             <Button
               type="button"
               variant="outline"
               onClick={() => setOpen(false)}
               disabled={loading}
+              className="min-w-[100px]"
             >
               Annuler
             </Button>
-            <Button type="submit" disabled={loading}>
+            <Button 
+              type="submit" 
+              disabled={loading}
+              className="min-w-[180px]"
+            >
               {loading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Envoi en cours...
                 </>
               ) : (
-                'Soumettre la proposition'
+                <>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Soumettre la proposition
+                </>
               )}
             </Button>
           </div>

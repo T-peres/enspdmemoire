@@ -12,11 +12,11 @@ export function useMeetingReports(themeId?: string, studentId?: string) {
     queryKey: ['meeting-reports', themeId, studentId],
     queryFn: async () => {
       let query = supabase
-        .from('meeting_reports')
+        .from('meetings')
         .select(`
           *,
-          student:profiles!meeting_reports_student_id_fkey(id, first_name, last_name, email),
-          supervisor:profiles!meeting_reports_supervisor_id_fkey(id, first_name, last_name, email)
+          student:profiles!meetings_student_id_fkey(id, first_name, last_name, email),
+          supervisor:profiles!meetings_supervisor_id_fkey(id, first_name, last_name, email)
         `)
         .order('meeting_date', { ascending: false });
 
@@ -37,7 +37,7 @@ export function useMeetingReports(themeId?: string, studentId?: string) {
   const createReport = useMutation({
     mutationFn: async (reportData: Partial<MeetingReport>) => {
       const { data, error } = await supabase
-        .from('meeting_reports')
+        .from('meetings')
         .insert([{ ...reportData, created_by: user?.id }])
         .select()
         .single();
@@ -57,7 +57,7 @@ export function useMeetingReports(themeId?: string, studentId?: string) {
   const updateReport = useMutation({
     mutationFn: async ({ id, updates }: { id: string; updates: Partial<MeetingReport> }) => {
       const { data, error } = await supabase
-        .from('meeting_reports')
+        .from('meetings')
         .update(updates)
         .eq('id', id)
         .select()
@@ -78,8 +78,8 @@ export function useMeetingReports(themeId?: string, studentId?: string) {
   const submitReport = useMutation({
     mutationFn: async (reportId: string) => {
       const { data, error } = await supabase
-        .from('meeting_reports')
-        .update({ status: 'submitted', submitted_at: new Date().toISOString() })
+        .from('meetings')
+        .update({ status: 'completed', supervisor_signed_at: new Date().toISOString() })
         .eq('id', reportId)
         .select()
         .single();
@@ -99,9 +99,9 @@ export function useMeetingReports(themeId?: string, studentId?: string) {
   const validateReport = useMutation({
     mutationFn: async ({ reportId, approved, reason }: { reportId: string; approved: boolean; reason?: string }) => {
       const { data, error } = await supabase
-        .from('meeting_reports')
+        .from('meetings')
         .update({
-          status: approved ? 'validated' : 'rejected',
+          status: approved ? 'completed' : 'cancelled',
           validated_at: approved ? new Date().toISOString() : null,
           validated_by: user?.id,
           rejection_reason: reason,

@@ -1,21 +1,24 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
+import { Skeleton } from '@/components/ui/skeleton';
 import { FileText, Calendar, CheckCircle, AlertCircle, MessageSquare, Upload } from 'lucide-react';
+import { useStudentDashboardStats } from '@/hooks/useDashboardStats';
 
-interface StudentStats {
-  overallProgress: number;
-  documentsSubmitted: number;
-  meetingsCount: number;
-  pendingActions: number;
-  unreadMessages: number;
-  plagiarismScore?: number;
-}
+export function StudentDashboardStats() {
+  const { stats, loading } = useStudentDashboardStats();
 
-interface StudentDashboardStatsProps {
-  stats: StudentStats;
-}
-
-export function StudentDashboardStats({ stats }: StudentDashboardStatsProps) {
+  if (loading) {
+    return (
+      <div className="space-y-4">
+        <Skeleton className="h-32" />
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {[...Array(6)].map((_, i) => (
+            <Skeleton key={i} className="h-32" />
+          ))}
+        </div>
+      </div>
+    );
+  }
   return (
     <div className="space-y-4">
       {/* Progression globale */}
