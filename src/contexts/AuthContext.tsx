@@ -113,7 +113,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    try {
+      // Nettoyer l'état local d'abord
+      setUser(null);
+      setSession(null);
+      setProfile(null);
+      setRoles([]);
+      
+      // Puis déconnecter de Supabase
+      const { error } = await supabase.auth.signOut();
+      
+      if (error) {
+        console.error('Erreur lors de la déconnexion:', error);
+      }
+    } catch (error) {
+      console.error('Erreur lors de la déconnexion:', error);
+    }
   };
 
   const hasRole = (role: AppRole): boolean => {

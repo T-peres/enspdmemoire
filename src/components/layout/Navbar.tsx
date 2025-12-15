@@ -15,8 +15,17 @@ export function Navbar() {
   const navigate = useNavigate();
 
   const handleSignOut = async () => {
-    await signOut();
-    navigate('/auth');
+    try {
+      await signOut();
+      // Attendre un peu pour que la déconnexion soit complète
+      setTimeout(() => {
+        navigate('/auth');
+      }, 100);
+    } catch (error) {
+      console.error('Erreur lors de la déconnexion:', error);
+      // Forcer la navigation même en cas d'erreur
+      navigate('/auth');
+    }
   };
 
   return (

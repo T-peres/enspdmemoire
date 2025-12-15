@@ -5,85 +5,110 @@ import { Department } from '@/types/database';
 export function useDepartments() {
   return useQuery({
     queryKey: ['departments'],
-    queryFn: async () => {
+    queryFn: async (): Promise<Department[]> => {
       const { data, error } = await supabase
         .from('departments')
         .select('*')
-        .order('name', { ascending: true });
-
+        .order('name');
+      
       if (error) throw error;
-      return data as Department[];
+      return data || [];
     },
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 }
 
-export function useDepartment(departmentId: string) {
+export function useDepartmentById(id: string | undefined) {
   return useQuery({
-    queryKey: ['department', departmentId],
-    queryFn: async () => {
+    queryKey: ['department', id],
+    queryFn: async (): Promise<Department | null> => {
+      if (!id) return null;
+      
       const { data, error } = await supabase
         .from('departments')
         .select('*')
-        .eq('id', departmentId)
+        .eq('id', id)
         .single();
-
+      
       if (error) throw error;
-      return data as Department;
+      return data;
+    },
+    enabled: !!id,
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+export function useDepartmentStats(departmentId: string | undefined) {
+  return useQuery({
+    queryKey: ['department-stats', departmentId],
+    queryFn: async () => {
+      if (!departmentId) return null;
+
+      // Récupérer les statistiques du département
+      const [
+        { data: students, error: studentsError },
+        { data: supervisors, error: supervisorsError },
+        { data: themes, error: themesError },
+        { data: topics, error: topicsError }
+      ] = await Promise.all([
+        // Étudiants du département
+        supabase
+          .from('profiles')
+          .select('id')
+          .eq('department_id', departmentId)
+          .in('id', 
+            supabase
+              .from('user_roles')
+              .select('user_id')
+              .eq('role', 'student')
+          ),
+        
+        // Encadreurs du département
+        supabase
+          .from('profiles')
+          .select('id')
+          .eq('department_id', departmentId)
+          .in('id', 
+            supabase
+              .from('user_roles')
+              .select('user_id')
+              .eq('role', 'supervisor')
+          ),
+        
+        // Thèmes approuvés
+        supabase
+          .from('themes')
+          .select('id, status')
+          .in('student_id',
+            supabase
+              .from('profiles')
+              .select('id')
+              .eq('department_id', departmentId)
+          ),
+        
+        // Sujets de thèse
+        supabase
+          .from('thesis_topics')
+          .select('id, status')
+          .eq('department_id', departmentId)
+      ]);
+
+      if (studentsError) throw studentsError;
+      if (supervisorsError) throw supervisorsError;
+      if (themesError) throw themesError;
+      if (topicsError) throw topicsError;
+
+      return {
+        totalStudents: students?.length || 0,
+        totalSupervisors: supervisors?.length || 0,
+        totalThemes: themes?.length || 0,
+        approvedThemes: themes?.filter(t => t.status === 'approved').length || 0,
+        totalTopics: topics?.length || 0,
+        approvedTopics: topics?.filter(t => t.status === 'approved').length || 0,
+        pendingTopics: topics?.filter(t => t.status === 'pending').length || 0,
+      };
     },
     enabled: !!departmentId,
+    staleTime: 2 * 60 * 1000, // 2 minutes
   });
 }
-
-// Liste des départements de l'ENSPD
-export const ENSPD_DEPARTMENTS = [
-  {
-    code: 'GIT',
-    name: 'Génie Informatique & Télécommunications',
-    description: 'Formation en informatique, réseaux et télécommunications',
-  },
-  {
-    code: 'GESI',
-    name: 'Génie Électrique et Systèmes Intelligents',
-    description: 'Formation en électricité, électronique et systèmes intelligents',
-  },
-  {
-    code: 'GQHSE',
-    name: 'Génie de la Qualité Hygiène Sécurité et Environnement',
-    description: 'Formation en qualité, hygiène, sécurité et environnement',
-  },
-  {
-    code: 'GAM',
-    name: 'Génie Automobile et Mécatronique',
-    description: 'Formation en automobile et mécatronique',
-  },
-  {
-    code: 'GMP',
-    name: 'Génie Maritime et Portuaire',
-    description: 'Formation en ingénierie maritime et portuaire',
-  },
-  {
-    code: 'GP',
-    name: 'Génie des Procédés',
-    description: 'Formation en génie des procédés industriels',
-  },
-  {
-    code: 'GE',
-    name: 'Génie Énergétique',
-    description: 'Formation en énergies et systèmes énergétiques',
-  },
-  {
-    code: 'GM',
-    name: 'Génie Mécanique',
-    description: 'Formation en mécanique et conception',
-  },
-  {
-    code: 'GPH',
-    name: 'Génie Physique',
-    description: 'Formation en physique appliquée',
-  },
-  {
-    code: 'GC',
-    name: 'Génie Civil',
-    description: 'Formation en génie civil et construction',
-  },
-] as const;

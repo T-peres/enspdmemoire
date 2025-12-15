@@ -157,12 +157,19 @@ export default function DepartmentDashboard() {
     return <Badge variant={variants[status]}>{labels[status]}</Badge>;
   };
 
-  const chartData = useMemo(() => [
-    { name: 'En attente', value: stats.pending, color: statusColors.pending },
-    { name: 'Approuvés', value: stats.approved, color: statusColors.approved },
-    { name: 'Rejetés', value: stats.rejected, color: statusColors.rejected },
-    { name: 'Verrouillés', value: stats.locked, color: statusColors.locked },
-  ], [stats]);
+  const chartData = useMemo(() => {
+    // Toujours afficher tous les statuts, même avec 0
+    const data = [
+      { name: 'En attente', value: stats.pending, color: statusColors.pending },
+      { name: 'Approuvés', value: stats.approved, color: statusColors.approved },
+      { name: 'Rejetés', value: stats.rejected, color: statusColors.rejected },
+      { name: 'Verrouillés', value: stats.locked, color: statusColors.locked },
+    ];
+    
+    // Filtrer les valeurs à 0 seulement pour le graphique (pas pour la légende)
+    const hasData = data.some(item => item.value > 0);
+    return hasData ? data : data.map(item => ({ ...item, value: 0.1 })); // Afficher un petit segment si tout est à 0
+  }, [stats]);
 
   const chartConfig = {
     pending: { label: 'En attente', color: statusColors.pending },
@@ -310,10 +317,10 @@ export default function DepartmentDashboard() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <BarChart3 className="h-5 w-5" />
-                  Répartition des Sujets
+                  Répartition des Sujets du Département {department?.code}
                 </CardTitle>
                 <CardDescription>
-                  Distribution des sujets par statut
+                  Distribution de tous les {topics.length} sujets de thèse par statut
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -325,7 +332,14 @@ export default function DepartmentDashboard() {
                         cx="50%"
                         cy="50%"
                         labelLine={false}
-                        label={({ name, value }) => `${name}: ${value}`}
+                        label={({ name, value }) => {
+                          // Afficher la vraie valeur depuis stats, pas la valeur du graphique
+                          const realValue = name === 'En attente' ? stats.pending :
+                                          name === 'Approuvés' ? stats.approved :
+                                          name === 'Rejetés' ? stats.rejected :
+                                          stats.locked;
+                          return `${name}: ${realValue}`;
+                        }}
                         outerRadius={80}
                         fill="#8884d8"
                         dataKey="value"

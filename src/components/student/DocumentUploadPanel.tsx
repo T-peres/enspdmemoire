@@ -42,10 +42,15 @@ export function DocumentUploadPanel({ themeId, onSuccess }: DocumentUploadPanelP
   };
 
   const generateFileHash = async (file: File): Promise<string> => {
-    const buffer = await file.arrayBuffer();
-    const hashBuffer = await crypto.subtle.digest('SHA-256', buffer);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    try {
+      const buffer = await file.arrayBuffer();
+      const hashBuffer = await crypto.subtle.digest('SHA-256', buffer);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    } catch (error) {
+      console.error('Error generating file hash:', error);
+      throw new Error('Impossible de générer le hash du fichier');
+    }
   };
 
   const handleUpload = async () => {
@@ -73,16 +78,19 @@ export function DocumentUploadPanel({ themeId, onSuccess }: DocumentUploadPanelP
         .from('documents')
         .getPublicUrl(fileName);
 
-      // Créer l'enregistrement du document
+      // Créer l'enregistrement du document avec hash SHA-256 et description
       const { error: dbError } = await supabase.from('documents').insert({
         theme_id: themeId,
         student_id: profile.id,
         document_type: formData.document_type,
         title: formData.title,
+        description: formData.description || null,
         file_path: publicUrl,
+        file_hash: fileHash, // Hash SHA-256 pour l'intégrité
         file_size: file.size,
         mime_type: file.type,
         status: 'submitted',
+        submitted_at: new Date().toISOString(),
       });
 
       if (dbError) throw dbError;

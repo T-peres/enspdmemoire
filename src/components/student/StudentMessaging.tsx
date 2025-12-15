@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -6,10 +6,12 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Skeleton } from '@/components/ui/skeleton';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
-import { Send, Mail, MailOpen, User } from 'lucide-react';
+import { Send, Mail, MailOpen, User, AlertCircle, RefreshCw } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { Message } from '@/types/database';
@@ -17,20 +19,72 @@ import { Message } from '@/types/database';
 interface StudentMessagingProps {
   supervisorId: string;
   supervisorName: string;
+  themeId?: string;
 }
 
-export function StudentMessaging({ supervisorId, supervisorName }: StudentMessagingProps) {
+export function StudentMessaging({ supervisorId, supervisorName, themeId }: StudentMessagingProps) {
   const { profile } = useAuth();
   const [messages, setMessages] = useState<Message[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [sending, setSending] = useState(false);
   const [showCompose, setShowCompose] = useState(false);
+  const [error, setError] = useState<string>('');
   const [formData, setFormData] = useState({
     subject: '',
     body: '',
   });
+  
+  // Référence pour l'annulation des requêtes
+  const abortControllerRef = useRef<AbortController | null>(null);
+
+  // Fonction pour annuler les requêtes en cours
+  const cancelPendingRequests = useCallback(() => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    abortControllerRef.current = new AbortController();
+    return abortControllerRef.current.signal;
+  }, []);
+
+  // Chargement des messages avec gestion d'erreurs et annulation
+  const loadMessages = useCallback(async (signal?: AbortSignal) => {
+    if (!profile?.id) return;
+
+    try {
+      setLoading(true);
+      setError('');
+
+      const { data, error: fetchError } = await supabase
+        .from('messages')
+        .select(`
+          *,
+          sender:profiles!messages_sender_id_fkey(first_name, last_name)
+        `)
+        .or(
+          `and(sender_id.eq.${profile.id},recipient_id.eq.${supervisorId}),and(sender_id.eq.${supervisorId},recipient_id.eq.${profile.id})`
+        )
+        .order('created_at', { ascending: false });
+
+      if (signal?.aborted) return;
+      if (fetchError) throw fetchError;
+
+      setMessages(data || []);
+    } catch (error: any) {
+      if (!signal?.aborted) {
+        console.error('Error loading messages:', error);
+        setError(error.message);
+        toast.error('Erreur lors du chargement des messages');
+      }
+    } finally {
+      if (!signal?.aborted) {
+        setLoading(false);
+      }
+    }
+  }, [profile?.id, supervisorId]);
 
   useEffect(() => {
-    loadMessages();
+    const signal = cancelPendingRequests();
+    loadMessages(signal);
     
     // S'abonner aux nouveaux messages en temps réel
     const channel = supabase
@@ -44,6 +98,18 @@ export function StudentMessaging({ supervisorId, supervisorName }: StudentMessag
           filter: `recipient_id=eq.${profile?.id}`,
         },
         () => {
+          // Recharger les messages sans signal d'annulation pour les mises à jour temps réel
+          loadMessages();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'messages',
+        },
+        () => {
           loadMessages();
         }
       )
@@ -51,80 +117,79 @@ export function StudentMessaging({ supervisorId, supervisorName }: StudentMessag
 
     return () => {
       supabase.removeChannel(channel);
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
     };
-  }, [supervisorId, profile]);
+  }, [supervisorId, profile?.id, loadMessages, cancelPendingRequests]);
 
-  const loadMessages = async () => {
-    if (!profile) return;
 
-    try {
-      const { data, error } = await supabase
-        .from('messages')
-        .select(`
-          *,
-          sender:profiles!messages_sender_id_fkey(first_name, last_name)
-        `)
-        .or(
-          `and(sender_id.eq.${profile.id},recipient_id.eq.${supervisorId}),and(sender_id.eq.${supervisorId},recipient_id.eq.${profile.id})`
-        )
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      setMessages(data || []);
-    } catch (error: any) {
-      console.error('Error loading messages:', error);
-    }
-  };
 
   const handleSendMessage = async () => {
-    if (!profile || !formData.subject || !formData.body) {
+    if (!profile || !formData.subject.trim() || !formData.body.trim()) {
       toast.error('Veuillez remplir tous les champs');
       return;
     }
 
-    setLoading(true);
+    setSending(true);
 
     try {
       const { error } = await supabase.from('messages').insert({
         sender_id: profile.id,
         recipient_id: supervisorId,
-        subject: formData.subject,
-        body: formData.body,
+        subject: formData.subject.trim(),
+        body: formData.body.trim(),
+        read: false, // Utiliser 'read' au lieu de 'is_read' pour harmoniser
+        theme_id: themeId, // Associer le message au thème si disponible
       });
 
       if (error) throw error;
 
-      // Créer une notification pour l'encadreur
+      // Créer une notification pour l'encadreur via RPC
       await supabase.rpc('create_notification', {
         p_user_id: supervisorId,
-        p_title: 'Nouveau Message',
+        p_title: 'Nouveau Message Étudiant',
         p_message: `${profile.first_name} ${profile.last_name} vous a envoyé un message: ${formData.subject}`,
         p_type: 'info',
         p_entity_type: 'message',
+        p_entity_id: null,
       });
 
-      toast.success('Message envoyé');
+      toast.success('Message envoyé avec succès');
       setFormData({ subject: '', body: '' });
       setShowCompose(false);
-      loadMessages();
+      
+      // Recharger les messages
+      const signal = cancelPendingRequests();
+      loadMessages(signal);
     } catch (error: any) {
       console.error('Error sending message:', error);
-      toast.error(`Erreur: ${error.message}`);
+      toast.error(`Erreur lors de l'envoi: ${error.message}`);
     } finally {
-      setLoading(false);
+      setSending(false);
     }
   };
 
   const markAsRead = async (messageId: string) => {
     try {
-      await supabase
+      const { error } = await supabase
         .from('messages')
-        .update({ read: true, read_at: new Date().toISOString() })
-        .eq('id', messageId);
+        .update({ 
+          read: true, 
+          read_at: new Date().toISOString() 
+        })
+        .eq('id', messageId)
+        .eq('recipient_id', profile?.id); // Sécurité: seul le destinataire peut marquer comme lu
 
-      loadMessages();
+      if (error) throw error;
+
+      // Mise à jour optimiste de l'état local
+      setMessages(prev => prev.map(msg => 
+        msg.id === messageId ? { ...msg, read: true, read_at: new Date().toISOString() } : msg
+      ));
     } catch (error: any) {
       console.error('Error marking message as read:', error);
+      toast.error('Erreur lors du marquage du message');
     }
   };
 

@@ -136,8 +136,11 @@ export function ProposeTopicDialog({ onTopicProposed }: ProposeTopicDialogProps)
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (e?: React.FormEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     if (!user) return;
 
     // Validation
@@ -268,7 +271,7 @@ export function ProposeTopicDialog({ onTopicProposed }: ProposeTopicDialogProps)
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-8 mt-6">
+        <div className="space-y-8 mt-6">
           {/* Section 1: Informations principales */}
           <div className="space-y-6">
             <div className="flex items-center gap-2 pb-2 border-b">
@@ -483,7 +486,8 @@ export function ProposeTopicDialog({ onTopicProposed }: ProposeTopicDialogProps)
               Annuler
             </Button>
             <Button 
-              type="submit" 
+              type="button"
+              onClick={handleSubmit}
               disabled={loading}
               className="min-w-[180px]"
             >
@@ -500,7 +504,7 @@ export function ProposeTopicDialog({ onTopicProposed }: ProposeTopicDialogProps)
               )}
             </Button>
           </div>
-        </form>
+        </div>
       </DialogContent>
     </Dialog>
   );

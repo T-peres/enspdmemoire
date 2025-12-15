@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navbar } from '@/components/layout/Navbar';
@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { NoRefreshSelect } from '@/components/ui/NoRefreshSelect';
 import { toast } from 'sonner';
 import { ThesisTopic, Department } from '@/types/database';
 import { BookOpen, Users, Clock, CheckCircle, Lock, Search, FileText, Download } from 'lucide-react';
@@ -26,42 +26,45 @@ export default function Topics() {
     fetchTopics();
   }, []);
 
-  const fetchDepartments = async () => {
-    const { data, error } = await supabase
-      .from('departments')
-      .select('*')
-      .order('name');
+  const fetchDepartments = useCallback(async () => {
+    try {
+      const { data, error } = await supabase
+        .from('departments')
+        .select('*')
+        .order('name');
 
-    if (error) {
+      if (error) throw error;
+      setDepartments(data || []);
+    } catch (error) {
+      console.error('Erreur lors du chargement des départements:', error);
       toast.error('Erreur lors du chargement des départements');
-      return;
     }
+  }, []);
 
-    setDepartments(data || []);
-  };
-
-  const fetchTopics = async () => {
+  const fetchTopics = useCallback(async () => {
     setLoading(true);
-    const { data, error } = await supabase
-      .from('thesis_topics')
-      .select(`
-        *,
-        department:departments(*),
-        supervisor:profiles!supervisor_id(*)
-      `)
-      .eq('status', 'approved')
-      .order('created_at', { ascending: false });
+    try {
+      const { data, error } = await supabase
+        .from('thesis_topics')
+        .select(`
+          *,
+          department:departments(*),
+          supervisor:profiles!supervisor_id(*)
+        `)
+        .eq('status', 'approved')
+        .order('created_at', { ascending: false });
 
-    if (error) {
+      if (error) throw error;
+      setTopics((data || []) as ThesisTopic[]);
+    } catch (error) {
+      console.error('Erreur lors du chargement des sujets:', error);
       toast.error('Erreur lors du chargement des sujets');
-      return;
+    } finally {
+      setLoading(false);
     }
+  }, []);
 
-    setTopics((data || []) as ThesisTopic[]);
-    setLoading(false);
-  };
-
-  const handleSelectTopic = async (topicId: string) => {
+  const handleSelectTopic = useCallback(async (topicId: string) => {
     if (!profile) {
       toast.error('Profil non chargé');
       return;
@@ -91,7 +94,30 @@ export default function Topics() {
     } finally {
       setSelecting(null);
     }
-  };
+  }, [profile, fetchTopics]);
+
+  // Gestionnaire sécurisé pour le changement de département
+  const handleDepartmentChange = useCallback((value: string) => {
+    try {
+      setSelectedDepartment(value);
+    } catch (error) {
+      console.error('Erreur lors du changement de département:', error);
+    }
+  }, []);
+
+  // Gestionnaire pour empêcher les soumissions par Entrée
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      e.stopPropagation();
+      console.log('Entrée bloquée sur le Select');
+    }
+  }, []);
+
+  // Gestionnaire sécurisé pour la recherche
+  const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value);
+  }, []);
 
   const filteredTopics = topics.filter((topic) => {
     const matchesSearch = topic.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -132,7 +158,7 @@ export default function Topics() {
           <ProposeTopicDialog onTopicProposed={fetchTopics} />
         </div>
 
-        {/* Filters */}
+        {/* Filters - Version 100% Anti-Rafraîchissement */}
         <div className="flex flex-col sm:flex-row gap-4 mb-6">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -141,24 +167,27 @@ export default function Topics() {
               name="search"
               placeholder="Rechercher un sujet..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={handleSearchChange}
+              onKeyDown={handleKeyDown}
               className="pl-10"
               autoComplete="off"
             />
           </div>
-          <Select value={selectedDepartment} onValueChange={setSelectedDepartment}>
-            <SelectTrigger className="w-full sm:w-[250px]">
-              <SelectValue placeholder="Tous les départements" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Tous les départements</SelectItem>
-              {departments.map((dept) => (
-                <SelectItem key={dept.id} value={dept.id}>
-                  {dept.code} - {dept.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          
+          {/* Select 100% Sécurisé - Ne peut PAS causer de rafraîchissement */}
+          <NoRefreshSelect
+            value={selectedDepartment}
+            onValueChange={handleDepartmentChange}
+            options={[
+              { value: 'all', label: 'Tous les départements' },
+              ...departments.map(dept => ({
+                value: dept.id,
+                label: `${dept.code} - ${dept.name}`
+              }))
+            ]}
+            placeholder="Tous les départements"
+            className="w-full sm:w-[250px]"
+          />
         </div>
 
         {/* Topics Grid */}
@@ -208,10 +237,12 @@ export default function Topics() {
                       <div className="flex items-center gap-2">
                         <FileText className="h-4 w-4 text-primary" />
                         <Button
+                          type="button"
                           variant="link"
                           size="sm"
                           className="h-auto p-0 text-primary"
                           onClick={async (e) => {
+                            e.preventDefault();
                             e.stopPropagation();
                             try {
                               const { data, error } = await supabase.storage
@@ -245,7 +276,12 @@ export default function Topics() {
 
                   {hasRole('student') && (
                     <Button
-                      onClick={() => handleSelectTopic(topic.id)}
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleSelectTopic(topic.id);
+                      }}
                       disabled={
                         topic.status === 'locked' ||
                         topic.current_students >= topic.max_students ||
