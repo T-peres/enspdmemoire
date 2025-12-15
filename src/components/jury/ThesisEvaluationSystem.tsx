@@ -8,7 +8,8 @@ import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { SafeSelect } from '@/components/ui/SafeSelect';
+import { COMMON_OPTIONS } from '@/utils/selectHelpers';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -450,39 +451,17 @@ export function ThesisEvaluationSystem({ themeId }: ThesisEvaluationSystemProps)
             <div className="space-y-6">
               {/* Décision */}
               <div>
-                <Label>Décision *</Label>
-                <Select 
-                  value={evaluationForm.decision} 
+                <SafeSelect
+                  label="Décision *"
+                  value={evaluationForm.decision || 'approved'}
                   onValueChange={(value) => setEvaluationForm(prev => ({ 
                     ...prev, 
                     decision: value as any,
                     corrections_required: value === 'corrections_required'
                   }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="approved">
-                      <div className="flex items-center gap-2">
-                        <CheckCircle className="h-4 w-4 text-green-500" />
-                        Approuvé
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="corrections_required">
-                      <div className="flex items-center gap-2">
-                        <AlertTriangle className="h-4 w-4 text-yellow-500" />
-                        Corrections requises
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="rejected">
-                      <div className="flex items-center gap-2">
-                        <XCircle className="h-4 w-4 text-red-500" />
-                        Rejeté
-                      </div>
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
+                  options={COMMON_OPTIONS.JURY_DECISIONS}
+                  required
+                />
               </div>
 
               {/* Note et mention (si approuvé) */}
@@ -504,25 +483,22 @@ export function ThesisEvaluationSystem({ themeId }: ThesisEvaluationSystemProps)
                     />
                   </div>
                   <div>
-                    <Label>Mention</Label>
-                    <Select 
-                      value={evaluationForm.mention || ''} 
+                    <SafeSelect
+                      label="Mention"
+                      value={evaluationForm.mention || ''}
                       onValueChange={(value) => setEvaluationForm(prev => ({ 
                         ...prev, 
                         mention: value || undefined 
                       }))}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Sélectionner une mention" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Passable">Passable</SelectItem>
-                        <SelectItem value="Assez Bien">Assez Bien</SelectItem>
-                        <SelectItem value="Bien">Bien</SelectItem>
-                        <SelectItem value="Très Bien">Très Bien</SelectItem>
-                        <SelectItem value="Excellent">Excellent</SelectItem>
-                      </SelectContent>
-                    </Select>
+                      placeholder="Sélectionner une mention"
+                      options={[
+                        { value: 'Passable', label: 'Passable' },
+                        { value: 'Assez Bien', label: 'Assez Bien' },
+                        { value: 'Bien', label: 'Bien' },
+                        { value: 'Très Bien', label: 'Très Bien' },
+                        { value: 'Excellent', label: 'Excellent' }
+                      ]}
+                    />
                   </div>
                 </div>
               )}

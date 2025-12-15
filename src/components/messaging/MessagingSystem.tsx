@@ -10,7 +10,8 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { SafeSelect } from '@/components/ui/SafeSelect';
+import { createSafeOptions } from '@/utils/selectHelpers';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { 
@@ -255,29 +256,20 @@ export function MessagingSystem() {
             </DialogHeader>
             <div className="space-y-4">
               <div>
-                <Label htmlFor="recipient">Destinataire</Label>
-                <Select 
-                  value={composeForm.recipient_id} 
+                <SafeSelect
+                  label="Destinataire"
+                  value={composeForm.recipient_id || ''}
                   onValueChange={(value) => setComposeForm(prev => ({ ...prev, recipient_id: value }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Sélectionner un destinataire" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {contacts.map(contact => (
-                      <SelectItem key={contact.id} value={contact.id}>
-                        <div className="flex items-center gap-2">
-                          <Avatar className="h-6 w-6">
-                            <AvatarFallback className="text-xs">
-                              {getInitials(contact.first_name, contact.last_name)}
-                            </AvatarFallback>
-                          </Avatar>
-                          {contact.first_name} {contact.last_name}
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  placeholder="Sélectionner un destinataire"
+                  options={contacts
+                    .filter(contact => contact?.id && contact?.first_name && contact?.last_name)
+                    .map(contact => ({
+                      value: contact.id,
+                      label: `${contact.first_name} ${contact.last_name}`
+                    }))
+                  }
+                  required
+                />
               </div>
               <div>
                 <Label htmlFor="subject">Sujet</Label>

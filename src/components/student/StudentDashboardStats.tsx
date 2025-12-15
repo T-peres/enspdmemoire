@@ -2,10 +2,20 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
 import { FileText, Calendar, CheckCircle, AlertCircle, MessageSquare, Upload } from 'lucide-react';
-import { useStudentDashboardStats } from '@/hooks/useDashboardStats';
 
-export function StudentDashboardStats() {
-  const { stats, loading } = useStudentDashboardStats();
+interface StudentDashboardStatsProps {
+  stats: {
+    overallProgress: number;
+    documentsSubmitted: number;
+    meetingsCount: number;
+    pendingActions: number;
+    unreadMessages: number;
+    plagiarismScore?: number;
+  };
+  loading?: boolean;
+}
+
+export function StudentDashboardStats({ stats, loading = false }: StudentDashboardStatsProps) {
 
   if (loading) {
     return (

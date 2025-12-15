@@ -1,7 +1,8 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
+import { validateSelectOptions, validateSelectValue } from '@/utils/selectHelpers';
 
 interface SafeSelectProps {
   value?: string;
@@ -35,15 +36,31 @@ export function SafeSelect({
   id,
 }: SafeSelectProps) {
   
+  // Valider et nettoyer les options
+  const safeOptions = useMemo(() => {
+    return validateSelectOptions(options);
+  }, [options]);
+  
+  // Valider la valeur actuelle
+  const safeValue = useMemo(() => {
+    return validateSelectValue(value);
+  }, [value]);
+  
   // Gestionnaire sécurisé qui empêche la propagation et le comportement par défaut
   const handleValueChange = useCallback((newValue: string) => {
     // Empêcher tout comportement par défaut
     try {
-      onValueChange(newValue);
+      // Valider que la nouvelle valeur existe dans les options
+      const validValue = validateSelectValue(newValue);
+      if (validValue && safeOptions.some(opt => opt.value === validValue)) {
+        onValueChange(validValue);
+      } else {
+        console.warn('Valeur invalide ignorée:', newValue);
+      }
     } catch (error) {
       console.error('Erreur lors du changement de valeur:', error);
     }
-  }, [onValueChange]);
+  }, [onValueChange, safeOptions]);
 
   // Gestionnaire pour empêcher la soumission de formulaire
   const handleKeyDown = useCallback((event: React.KeyboardEvent) => {
@@ -71,9 +88,9 @@ export function SafeSelect({
         </Label>
       )}
       <Select 
-        value={value} 
+        value={safeValue} 
         onValueChange={handleValueChange}
-        disabled={disabled}
+        disabled={disabled || safeOptions.length === 0}
       >
         <SelectTrigger 
           id={id}
@@ -83,14 +100,14 @@ export function SafeSelect({
           <SelectValue placeholder={placeholder} />
         </SelectTrigger>
         <SelectContent className="max-h-[300px] overflow-y-auto">
-          {options.length === 0 ? (
-            <SelectItem value="__empty__" disabled>
+          {safeOptions.length === 0 ? (
+            <SelectItem value="__no_options__" disabled>
               Aucune option disponible
             </SelectItem>
           ) : (
-            options.map((option) => (
+            safeOptions.map((option) => (
               <SelectItem 
-                key={option.value} 
+                key={`${option.value}-${option.label}`} 
                 value={option.value}
                 disabled={option.disabled}
               >

@@ -8,12 +8,15 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { StudentDashboardStats } from '@/components/student/StudentDashboardStats';
-import { DocumentUploadPanel } from '@/components/student/DocumentUploadPanel';
+import { DocumentUploadPanelWithValidation } from '@/components/student/DocumentUploadPanelWithValidation';
+import { DocumentManagementButton } from '@/components/documents/DocumentManagementButton';
 import { DocumentsHistory } from '@/components/student/DocumentsHistory';
 import { MeetingsTimeline } from '@/components/student/MeetingsTimeline';
+import { MeetingScheduler } from '@/components/student/MeetingScheduler';
 import { PlagiarismReport } from '@/components/student/PlagiarismReport';
-import { StudentMessaging } from '@/components/student/StudentMessaging';
-import { ThemeStatusCard } from '@/components/student/ThemeStatusCard';
+import { PlagiarismChecker } from '@/components/student/PlagiarismChecker';
+import { MessageCenter } from '@/components/student/MessageCenter';
+import { StudentProfile } from '@/components/student/StudentProfile';
 import { BookOpen, User, Building2, Calendar, AlertCircle } from 'lucide-react';
 import { TopicSelection } from '@/types/database';
 
@@ -220,7 +223,7 @@ export default function MyThesis() {
 
         {/* Statistiques */}
         <div className="mb-8">
-          <StudentDashboardStats stats={stats} />
+          <StudentDashboardStats stats={stats} loading={loading} />
         </div>
 
         {/* Informations du sujet */}
@@ -315,21 +318,55 @@ export default function MyThesis() {
           </TabsList>
 
           <TabsContent value="documents" className="space-y-4">
-            <DocumentUploadPanel
+            {/* Remplacé par le nouveau système de gestion des documents */}
+            <div className="text-center py-8">
+              <p className="text-muted-foreground mb-4">
+                Utilisez le nouveau système de gestion des documents pour une expérience améliorée
+              </p>
+              <DocumentManagementButton
+                themeId={selection.topic?.id || ''}
+                variant="default"
+                size="lg"
+                className="w-full max-w-md"
+              />
+            </div>
+            
+            {/* Ancien composant conservé en commentaire pour référence
+            <DocumentUploadPanelWithValidation
               themeId={selection.topic?.id || ''}
               onSuccess={() => {
                 loadDocuments();
                 loadStats();
               }}
             />
+            */}
             <DocumentsHistory documents={documents} />
           </TabsContent>
 
           <TabsContent value="meetings" className="space-y-4">
+            {selection.topic?.supervisor && (
+              <MeetingScheduler
+                supervisorId={selection.topic.supervisor.id}
+                supervisorName={`${selection.topic.supervisor.first_name} ${selection.topic.supervisor.last_name}`}
+                themeId={selection.topic.id}
+                onSuccess={() => {
+                  loadMeetings();
+                  loadStats();
+                }}
+              />
+            )}
             <MeetingsTimeline meetings={meetings} />
           </TabsContent>
 
           <TabsContent value="plagiarism" className="space-y-4">
+            <PlagiarismChecker
+              themeId={selection.topic?.id || ''}
+              documents={documents}
+              onSuccess={() => {
+                loadPlagiarismReport();
+                loadStats();
+              }}
+            />
             <PlagiarismReport
               report={plagiarismReport}
               documentTitle={documents[0]?.title || 'Votre document'}
@@ -337,61 +374,15 @@ export default function MyThesis() {
           </TabsContent>
 
           <TabsContent value="messages" className="space-y-4">
-            {selection.topic?.supervisor ? (
-              <StudentMessaging
-                supervisorId={selection.topic.supervisor.id}
-                supervisorName={`${selection.topic.supervisor.first_name} ${selection.topic.supervisor.last_name}`}
-              />
-            ) : (
-              <Card>
-                <CardContent className="pt-6">
-                  <p className="text-center text-muted-foreground">
-                    Aucun encadreur assigné pour le moment
-                  </p>
-                </CardContent>
-              </Card>
-            )}
+            <MessageCenter
+              supervisorId={selection.topic?.supervisor?.id}
+              supervisorName={selection.topic?.supervisor ? `${selection.topic.supervisor.first_name} ${selection.topic.supervisor.last_name}` : undefined}
+              themeId={selection.topic?.id}
+            />
           </TabsContent>
 
           <TabsContent value="profile" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Informations Personnelles</CardTitle>
-                <CardDescription>
-                  Vos données académiques et coordonnées
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid gap-4 md:grid-cols-2">
-                  <div>
-                    <p className="text-sm font-medium mb-1">Nom complet</p>
-                    <p className="text-sm text-muted-foreground">
-                      {profile?.first_name} {profile?.last_name}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium mb-1">Email</p>
-                    <p className="text-sm text-muted-foreground">{profile?.email}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium mb-1">Matricule</p>
-                    <p className="text-sm text-muted-foreground">{profile?.student_id || 'N/A'}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium mb-1">Département</p>
-                    <p className="text-sm text-muted-foreground">
-                      {selection.topic?.department?.name}
-                    </p>
-                  </div>
-                  {profile?.phone && (
-                    <div>
-                      <p className="text-sm font-medium mb-1">Téléphone</p>
-                      <p className="text-sm text-muted-foreground">{profile.phone}</p>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
+            <StudentProfile />
           </TabsContent>
         </Tabs>
       </div>

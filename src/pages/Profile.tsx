@@ -4,11 +4,11 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { SafeSelect } from '@/components/ui/SafeSelect';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { toast } from '@/hooks/use-toast';
 import { Department } from '@/types/database';
-import { Loader2, Upload } from 'lucide-react';
+import { Loader2, Upload, RefreshCw } from 'lucide-react';
 import { Navbar } from '@/components/layout/Navbar';
 
 export default function Profile() {
@@ -45,19 +45,21 @@ export default function Profile() {
   }, [profile]);
 
   const fetchDepartments = async () => {
-    const { data, error } = await supabase
-      .from('departments')
-      .select('*')
-      .order('name');
-    
-    if (error) {
+    try {
+      const { data, error } = await supabase
+        .from('departments')
+        .select('*')
+        .order('name');
+      
+      if (error) throw error;
+      setDepartments(data || []);
+    } catch (error: any) {
+      console.error('Error fetching departments:', error);
       toast({
         title: 'Erreur',
         description: 'Impossible de charger les départements',
         variant: 'destructive',
       });
-    } else {
-      setDepartments(data || []);
     }
   };
 
@@ -290,22 +292,27 @@ export default function Profile() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="department">Département</Label>
-                <Select
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="department">Département</Label>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={fetchDepartments}
+                    className="h-6 px-2"
+                  >
+                    <RefreshCw className="h-3 w-3" />
+                  </Button>
+                </div>
+                <SafeSelect
                   value={formData.department_id}
                   onValueChange={(value) => setFormData({ ...formData, department_id: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Sélectionnez votre département" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {departments.map((dept) => (
-                      <SelectItem key={dept.id} value={dept.id}>
-                        {dept.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  placeholder="Sélectionnez votre département"
+                  options={departments.map((dept) => ({
+                    value: dept.id,
+                    label: dept.name
+                  }))}
+                />
               </div>
 
               <div className="flex justify-end pt-4">
